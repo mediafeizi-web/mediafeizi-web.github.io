@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت پرو</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, Arial, sans-serif; }
+        body { background-color: #000000; color: #ffffff; height: 100vh; overflow: hidden; }
+        
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        
+        .glass { background: #0a0a0a; border: 1px solid #222; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .input-field {
+            width: 100%; background-color: #111; border: 1px solid #333; color: #fff;
+            padding: 14px; border-radius: 12px; margin-bottom: 12px; outline: none; font-size: 14px; transition: border-color 0.2s;
+        }
+        .input-field:focus { border-color: #4f46e5; }
+        
+        .btn {
+            width: 100%; background-color: #4f46e5; color: white; border: none;
+            padding: 14px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s;
+        }
+        .btn:hover { background-color: #4338ca; }
+        
+        #auth-screen { display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+        .auth-box { width: 100%; max-width: 400px; padding: 30px; }
+        .auth-title { font-size: 28px; font-weight: bold; text-align: center; color: #818cf8; margin-bottom: 20px; }
+        .link-text { color: #818cf8; cursor: pointer; font-size: 14px; text-align: center; display: block; margin-top: 15px; }
+        
+        #main-screen { display: flex; height: 100vh; }
+        
+        .sidebar { width: 260px; background: #0a0a0a; border-left: 1px solid #222; display: flex; flex-direction: column; }
+        .user-info { padding: 20px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+        .nav-menu { flex: 1; padding: 10px; }
+        .nav-btn { width: 100%; text-align: right; background: transparent; border: none; color: #ccc; padding: 12px 15px; border-radius: 10px; cursor: pointer; font-size: 15px; margin-bottom: 5px; }
+        .nav-btn:hover { background: #1a1a1a; color: #fff; }
+        .nav-btn.active { background: #1a1a1a; color: #818cf8; font-weight: bold; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-box { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 16px; margin-bottom: 10px; font-size: 14px; }
+        .message.mine { background: #4f46e5; margin-right: auto; border-bottom-right-radius: 4px; }
+        .message.other { background: #1f1f1f; margin-left: auto; border-bottom-left-radius: 4px; }
+        .message-sender { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        
+        .chat-input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: #000; border-top: 1px solid #222; display: flex; gap: 10px; }
+        .chat-input { flex: 1; background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; outline: none; }
+        
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .mobile-nav { display: flex; justify-content: space-around; padding: 15px; background: #0a0a0a; border-top: 1px solid #222; position: absolute; bottom: 0; width: 100%; z-index: 10; }
+            .mobile-nav button { background: none; border: none; color: white; font-size: 20px; }
+            .content-area { padding: 15px; padding-bottom: 80px; }
+            .chat-input-area { bottom: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="glass auth-box">
+            <h1 class="auth-title">چت پرو</h1>
+            <div id="auth-error" class="hidden" style="color: #ef4444; text-align: center; margin-bottom: 10px; font-size: 14px;"></div>
+
+            <div id="register-form">
+                <input type="text" id="reg-name" placeholder="نام" class="input-field">
+                <input type="text" id="reg-username" placeholder="نام کاربری" class="input-field">
+                <input type="password" id="reg-password" placeholder="رمز عبور" class="input-field">
+                <input type="text" id="reg-phone" placeholder="شماره تلفن" class="input-field">
+                <input type="text" id="reg-code" placeholder="کد دمو (12345)" class="input-field">
+                <button onclick="register()" class="btn">ثبت‌نام</button>
+                <span class="link-text" onclick="toggleAuth('login')">حساب داری؟ وارد شو</span>
+            </div>
+
+            <div id="login-form" class="hidden">
+                <input type="text" id="log-username" placeholder="نام کاربری" class="input-field">
+                <input type="password" id="log-password" placeholder="رمز عبور" class="input-field">
+                <button onclick="login()" class="btn">ورود</button>
+                <span class="link-text" onclick="toggleAuth('register')">حساب نداری؟ ثبت‌نام کن</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-screen" class="hidden">
+        <div class="sidebar">
+            <div class="user-info">
+                <div class="avatar" id="user-avatar"></div>
+                <div>
+                    <div style="font-weight: bold; display: flex; align-items: center; gap: 5px;" id="user-name-display"></div>
+                    <div style="font-size: 12px; color: #888;" id="user-username-display"></div>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <button onclick="switchTab('public')" id="btn-public" class="nav-btn active">🌐 چت عمومی</button>
+                <button onclick="switchTab('private')" id="btn-private" class="nav-btn">💬 چت خصوصی</button>
+                <button onclick="switchTab('profile')" id="btn-profile" class="nav-btn">👤 پروفایل</button>
+                <button onclick="openAdmin()" class="nav-btn" style="color: #fbbf24;">🛡️ پنل مدیریت</button>
+            </div>
+            <div style="padding: 15px; border-top: 1px solid #222;">
+                <button onclick="logout()" class="nav-btn" style="color: #ef4444;">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="content-area" class="content-area"></div>
+            <div class="mobile-nav">
+                <button onclick="switchTab('public')">🌐</button>
+                <button onclick="switchTab('private')">💬</button>
+                <button onclick="switchTab('profile')">👤</button>
+                <button onclick="openAdmin()">🛡️</button>
+                <button onclick="logout()" style="color: #ef4444;">🚪</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let users = JSON.parse(localStorage.getItem('cp_users')) || [];
+        let messages = JSON.parse(localStorage.getItem('cp_messages')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('cp_currentUser')) || null;
+        let currentChatId = 'public';
+
+        function save() {
+            localStorage.setItem('cp_users', JSON.stringify(users));
+            localStorage.setItem('cp_messages', JSON.stringify(messages));
+            localStorage.setItem('cp_currentUser', JSON.stringify(currentUser));
+        }
+
+        function toggleAuth(type) {
+            document.getElementById('register-form').classList.toggle('hidden', type === 'login');
+            document.getElementById('login-form').classList.toggle('hidden', type === 'register');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('auth-error');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
+        function register() {
+            const name = document.getElementById('reg-name').value;
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const phone = document.getElementById('reg-phone').value;
+            const code = document.getElementById('reg-code').value;
+
+            if (code !== '12345') return showError('کد دمو اشتباه است (کد: 12345)');
+            if (!name || !username || !password) return showError('همه فیلدها الزامی است');
+            if (users.find(u => u.username === username)) return showError('نام کاربری تکراری است');
+
+            const newUser = { id: Date.now().toString(), name, username, password, phone, isVerified: false, isBlocked: false, bio: '' };
+            users.push(newUser);
+            currentUser = newUser;
+            save();
+            showMain();
+        }
+
+        function login() {
+            const username = document.getElementById('log-username').value;
+            const password = document.getElementById('log-password').value;
+
+            const user = users.find(u => u.username === username && u.password === password);
+            if (!user) return showError('نام کاربری یا رمز اشتباه است');
+            if (user.isBlocked) return showError('حساب شما مسدود شده است');
+
+            currentUser = user;
+            save();
+            showMain();
+        }
+
+        function logout() {
+            currentUser = null;
+            save();
+            document.getElementById('main-screen').classList.add('hidden');
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-username').value = '';
+            document.getElementById('reg-password').value = '';
+            document.getElementById('log-username').value = '';
+            document.getElementById('log-password').value = '';
+        }
+
+        function showMain() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-screen').classList.remove('hidden');
+            
+            document.getElementById('user-avatar').innerText = currentUser.name.charAt(0);
+            let displayName = currentUser.name;
+            if (currentUser.isVerified) displayName += ' <span style="color: #3b82f6; font-size: 14px;">✔️</span>';
+            document.getElementById('user-name-display').innerHTML = displayName;
+            document.getElementById('user-username-display').innerText = '@' + currentUser.username;
+
+            switchTab('public');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(document.getElementById('btn-'+tab)) document.getElementById('btn-'+tab).classList.add('active');
+            
+            const area = document.getElementById('content-area');
+            if (tab === 'public') {
+                currentChatId = 'public';
+                renderChat(area, 'چت عمومی');
+            } else if (tab === 'private') {
+                renderPrivateList(area);
+            } else if (tab === 'profile') {
+                renderProfile(area);
+            }
+        }
+
+        function renderChat(area, title, otherUserId = null) {
+            let header = `<h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px;">${title}</h2>`;
+            let chatBox = `<div id="chat-box" class="chat-box"></div>`;
+            let inputArea = `
+                <div class="chat-input-area">
+                    <input type="text" id="msg-input" class="chat-input" placeholder="پیامت را بنویس..." onkeypress="if(event.key==='Enter') sendMsg('${otherUserId || 'public'}')">
+                    <button onclick="sendMsg('${otherUserId || 'public'}')" class="btn" style="width: auto; padding: 10px 20px;">ارسال</button>
+                </div>
+            `;
+            area.innerHTML = `<div class="chat-container">${header}${chatBox}${inputArea}</div>`;
+            loadMessages(otherUserId);
+        }
+
+        function loadMessages(otherUserId) {
+            const chatBox = document.getElementById('chat-box');
+            if (!chatBox) return;
+            
+            let filtered = [];
+            if (!otherUserId || otherUserId === 'public') {
+                filtered = messages.filter(m => m.receiverId === 'public');
+            } else {
+                filtered = messages.filter(m => 
+                    (m.senderId === currentUser.id && m.receiverId === otherUserId) || 
+                    (m.senderId === otherUserId && m.receiverId === currentUser.id)
+                );
+            }
+
+            chatBox.innerHTML = filtered.map(m => {
+                const isMine = m.senderId === currentUser.id;
+                const sender = users.find(u => u.id === m.senderId);
+                let nameDisplay = sender ? sender.name : 'ناشناس';
+                if (sender && sender.isVerified) nameDisplay += ' <span style="color: #3b82f6; font-size: 10px;">✔️</span>';
+
+                return `
+                <div class="message ${isMine ? 'mine' : 'other'}">
+                    ${!isMine && !otherUserId ? `<div class="message-sender">${nameDisplay}</div>` : ''}
+                    <div>${m.text}</div>
+                </div>`;
+            }).join('');
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendMsg(targetId) {
+            const input = document.getElementById('msg-input');
+            if (!input.value.trim()) return;
+            
+            const receiver = targetId === 'public' ? 'public' : targetId;
+            messages.push({ id: Date.now().toString(), senderId: currentUser.id, receiverId: receiver, text: input.value });
+            input.value = '';
+            save();
+            loadMessages(targetId);
+        }
+
+        function renderPrivateList(area) {
+            let html = `<h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px;">کاربران</h2>`;
+            const others = users.filter(u => u.id !== currentUser.id && !u.isBlocked);
+            
+            if (others.length === 0) html += `<p style="color: #888;">کاربر دیگری وجود ندارد.</p>`;
+
+            others.forEach(u => {
+                let name = u.name;
+                if (u.isVerified) name += ' <span style="color: #3b82f6; font-size: 12px;">✔️</span>';
+                html += `
+                <div onclick="startPrivateChat('${u.id}', '${u.name}')" class="glass" style="padding: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; cursor: pointer;">
+                    <div class="avatar" style="width: 40px; height: 40px; font-size: 16px;">${u.name.charAt(0)}</div>
+                    <div>
+                        <div style="font-weight: bold;">${name}</div>
+                        <div style="font-size: 12px; color: #888;">@${u.username}</div>
+                    </div>
+                </div>`;
+            });
+            area.innerHTML = html;
+        }
+
+        function startPrivateChat(id, name) {
+            renderChat(document.getElementById('content-area'), `چت با ${name}`, id);
+        }
+
+        function renderProfile(area) {
+            let name = currentUser.name;
+            if (currentUser.isVerified) name += ' <span style="color: #3b82f6;">✔️</span>';
+            
+            area.innerHTML = `
+                <div class="glass" style="max-width: 400px; margin: 20px auto; padding: 25px;">
+                    <h2 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 20px;">پروفایل من</h2>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <div class="avatar" style="width: 60px; height: 60px; font-size: 24px;">${currentUser.name.charAt(0)}</div>
+                        <div>
+                            <div style="font-weight: bold; font-size: 18px;">${name}</div>
+                            <div style="font-size: 13px; color: #888;">@${currentUser.username}</div>
+                        </div>
+                    </div>
+                    <label style="font-size: 13px; color: #aaa;">نام</label>
+                    <input type="text" id="prof-name" value="${currentUser.name}" class="input-field" style="margin-top: 5px;">
+                    
+                    <label style="font-size: 13px; color: #aaa;">بیوگرافی</label>
+                    <textarea id="prof-bio" class="input-field" style="margin-top: 5px; resize: none;" rows="3">${currentUser.bio || ''}</textarea>
+                    
+                    <label style="font-size: 13px; color: #aaa;">رمز عبور جدید (اختیاری)</label>
+                    <input type="password" id="prof-pass" placeholder="رمز جدید..." class="input-field" style="margin-top: 5px;">
+                    
+                    <button onclick="saveProfile()" class="btn" style="margin-top: 10px;">ذخیره تغییرات</button>
+                </div>
+            `;
+        }
+
+        function saveProfile() {
+            const newName = document.getElementById('prof-name').value;
+            const newBio = document.getElementById('prof-bio').value;
+            const newPass = document.getElementById('prof-pass').value;
+
+            if (newName) currentUser.name = newName;
+            currentUser.bio = newBio;
+            if (newPass) currentUser.password = newPass;
+
+            const idx = users.findIndex(u => u.id === currentUser.id);
+            users[idx] = currentUser;
+            save();
+            showMain();
+            alert('پروفایل با موفقیت ذخیره شد!');
+        }
+
+        function openAdmin() {
+            const pass = prompt('رمز پنل مدیریت را وارد کنید:');
+            if (pass !== '357753') {
+                if(pass !== null) alert('رمز اشتباه است!');
+                return;
+            }
+            const area = document.getElementById('content-area');
+            let html = `<h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px;">پنل مدیریت</h2>`;
+            
+            users.forEach(u => {
+                let name = u.name;
+                if (u.isVerified) name += ' <span style="color: #3b82f6; font-size: 14px;">✔️</span>';
+                if (u.isBlocked) name += ' <span style="color: #ef4444; font-size: 12px;">(مسدود)</span>';
+                
+                html += `
+                <div class="glass" style="padding: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-weight: bold;">${name}</div>
+                        <div style="font-size: 12px; color: #888;">@${u.username}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="toggleVerify('${u.id}')" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer;">تیک</button>
+                        <button onclick="toggleBlock('${u.id}')" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: none; padding: 6px 12px; border
+   .
