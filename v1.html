@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head><meta charset="UTF-8"><title>چت پرو</title></head>
+<body style="background:#000; color:#fff; font-family:Tahoma; padding:20px;">
+    <div id="login">
+        <h3>ثبت نام چت پرو</h3>
+        <input id="name" placeholder="اسم شما" style="padding:10px; margin:5px; width:80%"><br>
+        <input id="code" placeholder="کد دمو 12345" style="padding:10px; margin:5px; width:80%"><br>
+        <button onclick="reg()" style="padding:10px 20px; background:blue; color:white;">ورود</button>
+    </div>
+    <div id="chat" style="display:none">
+        <div id="msgs" style="height:300px; overflow-y:scroll; border:1px solid #333; margin:10px 0; padding:10px;"></div>
+        <input id="text" placeholder="پیام..." style="padding:10px; width:70%">
+        <button onclick="send()" style="padding:10px; background:blue; color:white;">ارسال</button>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        const db = getFirestore(initializeApp({apiKey:"AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg", projectId:"chat-pro-ff65d", appId:"1:804620446100:web:776a714048fb732b93c781"}));
+        
+        let me="";
+        window.reg = async() => {
+            if(document.getElementById('code').value!=='12345') return alert('کد دمو اشتباهه!');
+            me = document.getElementById('name').value;
+            if(!me) return alert('اسمت رو بنویس');
+            document.getElementById('login').style.display='none';
+            document.getElementById('chat').style.display='block';
+            onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), s => {
+                let h=""; s.forEach(d => { let m=d.data(); h += `<div style="margin:5px 0"><b>${m.name}:</b> ${m.text}</div>`; });
+                document.getElementById('msgs').innerHTML=h;
+                document.getElementById('msgs').scrollTop = 99999;
+            });
+        };
+        window.send = async() => {
+            let t = document.getElementById('text').value;
+            if(!t) return; 
+            document.getElementById('text').value='';
+            await addDoc(collection(db, "messages"), {name:me, text:t, time:Date.now()});
+        };
+    </script>
+</body>
+</html>
