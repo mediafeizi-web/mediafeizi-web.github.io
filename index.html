@@ -1,10 +1,82 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>تست</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>چت پرو</title>
+<style>
+*{box-sizing:border-box;font-family:Tahoma}body{background:#000;color:#fff;margin:0;height:100vh;display:flex;flex-direction:column}
+.h{display:none!important}.b{background:#111;padding:15px;border-radius:10px;margin:10px;border:1px solid #333}
+input,button{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #333;background:#222;color:#fff}
+button{background:#4f46e5;border:none;font-weight:bold;cursor:pointer}
+#head{display:flex;justify-content:space-between;padding:10px;background:#111;border-bottom:1px solid #333}
+#cont{flex:1;overflow-y:auto;padding:10px;padding-bottom:80px}
+.m{margin-bottom:10px;padding:10px;border-radius:8px;background:#222;max-width:85%}
+.m.mine{background:#4f46e5;margin-right:auto}.m.other{margin-left:auto}
+.av{width:30px;height:30px;border-radius:50%;object-fit:cover}.img{max-width:100%;border-radius:8px;margin-top:5px}
+#nav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px}
+#nav button{width:auto;background:none;font-size:22px}
+#inp{position:fixed;bottom:60px;left:0;right:0;background:#000;padding:10px;display:flex;gap:5px}
+#inp input{margin:0}#inp button{width:auto;margin:0;padding:10px}
+#emoji{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;padding:10px;background:#222;border-radius:8px;position:fixed;bottom:110px;left:10px;right:10px}
+#emoji span{font-size:24px;cursor:pointer;text-align:center}
+</style>
 </head>
-<body style="background:black; color:white; text-align:center; padding-top:50px;">
-    <h1>سایت باز شد!</h1>
+<body>
+<div id="auth" class="b" style="margin-top:50px">
+<h2 style="text-align:center;color:#818cf8">چت پرو</h2>
+<input id="name" placeholder="نام"><input id="user" placeholder="نام کاربری (انگلیسی)">
+<input id="pass" type="password" placeholder="رمز"><input id="code" placeholder="کد دمو (12345)">
+<button onclick="login()">ورود / ثبت‌نام</button></div>
+<div id="head" class="h"><div style="display:flex;align-items:center;gap:10px"><img id="myAv" class="av"><b id="wel"></b></div><button onclick="openAdmin()" style="width:auto;background:#ef4444;padding:5px 10px;font-size:12px">مدیریت</button></div>
+<div id="cont" class="h">
+<div id="tab-public"></div>
+<div id="tab-private" class="h"><div id="privList"></div><div id="privChat" class="h"><button onclick="back()" style="background:#333">بازگشت</button><div id="privMsgs"></div></div></div>
+<div id="tab-profile" class="h"><div class="b"><img id="profAv" class="av" style="width:60px;height:60px;display:block;margin:auto"><input type="file" id="file-av" class="h" onchange="upAv(event)"><button onclick="document.getElementById('file-av').click()" style="background:#333">عکس</button><input id="pName" placeholder="نام"><input id="pBio" placeholder="بیو"><button onclick="saveProf()">ذخیره</button></div></div>
+<div id="tab-admin" class="h"></div>
+</div>
+<div id="nav" class="h"><button onclick="tab('public')">🌐</button><button onclick="tab('private')">💬</button><button onclick="tab('profile')">👤</button></div>
+<div id="inp" class="h"><label for="file-img" style="font-size:22px;cursor:pointer">📎</label><input type="file" id="file-img" class="h" onchange="upImg(event)"><button onclick="toggleEmoji()" style="background:none;font-size:22px">😀</button><input id="msg" onkeypress="if(event.key==='Enter')send()"><button onclick="send()">ارسال</button></div>
+<div id="emoji" class="h"><span onclick="addEmoji('😀')">😀</span><span onclick="addEmoji('😂')">😂</span><span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('😎')">😎</span><span onclick="addEmoji('👍')">👍</span><span onclick="addEmoji('❤️')">❤️</span><span onclick="addEmoji('🔥')">🔥</span><span onclick="addEmoji('🙏')">🙏</span><span onclick="addEmoji('💯')">💯</span><span onclick="addEmoji('👋')">👋</span><span onclick="addEmoji('🎉')">🎉</span><span onclick="addEmoji('💔')">💔</span></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+const db = getFirestore(initializeApp({apiKey:"AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",authDomain:"chat-pro-ff65d.firebaseapp.com",projectId:"chat-pro-ff65d",storageBucket:"chat-pro-ff65d.firebasestorage.app",messagingSenderId:"804620446100",appId:"1:804620446100:web:776a714048fb732b93c781"}));
+const $ = id => document.getElementById(id);
+let me, us=[], ms=[], cTab='public', cPriv=null;
+
+window.login = async() => {
+let n=$('name').value.trim(), u=$('user').value.trim().toLowerCase(), p=$('pass').value, c=$('code').value;
+if(c!=='12345')return alert('کد دمو 12345');
+if(!n||!u||!p)return alert('کامل پر کن');
+let q=await getDocs(query(collection(db,"users"),where("username","==",u)));
+if(!q.empty){me=q.docs[0].data();me.id=q.docs[0].id;if(me.password!==p)return alert('رمز غلط');if(me.isBlocked)return alert('بلاک شدی');}
+else{let nu={name:n,username:u,password:p,isVerified:false,isBlocked:false,avatar:'',bio:''};let r=await addDoc(collection(db,"users"),nu);nu.id=r.id;me=nu;}
+localStorage.setItem('u',JSON.stringify(me)); start();
+}
+window.out=()=>{localStorage.removeItem('u');location.reload();}
+function start(){
+$('auth').classList.add('h');$('head').classList.remove('h');$('cont').classList.remove('h');$('nav').classList.remove('h');
+$('wel').innerText=me.name;if(me.avatar)$('myAv').src=me.avatar;
+onSnapshot(collection(db,"users"),s=>{us=s.docs.map(d=>({id:d.id,...d.data()}));let m=us.find(u=>u.id===me.id);if(m){if(m.isBlocked){alert('بلاک');out()}me=m;$('wel').innerText=me.name+(me.isVerified?' ✔️':'');if(me.avatar){$('myAv').src=me.avatar;$('profAv').src=me.avatar}if(cTab==='private')rPriv();if(cTab==='admin')rAdm();}});
+onSnapshot(query(collection(db,"messages"),orderBy("time","asc")),s=>{ms=s.docs.map(d=>d.data());if(cTab==='public')rPub();if(cTab==='private'&&cPriv)rPrivMs();});
+tab('public');
+}
+window.tab = t => {cTab=t;cPriv=null;['public','private','profile','admin'].forEach(x=>$('tab-'+x).classList.add('h'));$('inp').classList.add('h');$('emoji').classList.add('h');$('tab-'+t).classList.remove('h');if(t==='public'){$('inp').classList.remove('h');rPub();}if(t==='private'){$('privList').classList.remove('h');$('privChat').classList.add('h');rPriv();}if(t==='profile'){$('pName').value=me.name;$('pBio').value=me.bio||'';}if(t==='admin')rAdm();};
+function rPub(){let h='';ms.filter(m=>m.receiverId==='public').forEach(m=>{let s=us.find(u=>u.id===m.senderId)||{name:m.name,avatar:''};let a=s.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=s.isVerified?' ✔️':'';let i=m.image?`<img src="${m.image}" class="img">`:'';h+=`<div class="m ${m.senderId===me.id?'mine':'other'}"><div><img src="${a}" class="av"><b>${m.name}${t}:</b><br>${m.text}${i}</div></div>`});$('tab-public').innerHTML=h;$('cont').scrollTop=$('cont').scrollHeight;}
+function rPriv(){let h='';us.filter(u=>u.id!==me.id&&!u.isBlocked).forEach(u=>{let a=u.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=u.isVerified?' ✔️':'';h+=`<div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #333;cursor:pointer" onclick="openPriv('${u.id}')"><img src="${a}" class="av"><div><b>${u.name}${t}</b><br><small>@${u.username}</small></div></div>`});$('privList').innerHTML=h;}
+window.openPriv=id=>{cPriv=id;$('privList').classList.add('h');$('privChat').classList.remove('h');$('inp').classList.remove('h');rPrivMs();};
+window.back=()=>{cPriv=null;$('privChat').classList.add('h');$('privList').classList.remove('h');$('inp').classList.add('h');};
+function rPrivMs(){let h='';ms.filter(m=>(m.senderId===me.id&&m.receiverId===cPriv)||(m.senderId===cPriv&&m.receiverId===me.id)).forEach(m=>{let s=us.find(u=>u.id===m.senderId)||{name:m.name,avatar:''};let a=s.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=s.isVerified?' ✔️':'';let i=m.image?`<img src="${m.image}" class="img">`:'';h+=`<div class="m ${m.senderId===me.id?'mine':'other'}"><div><img src="${a}" class="av"><b>${m.name}${t}:</b><br>${m.text}${i}</div></div>`});$('privMsgs').innerHTML=h;$('cont').scrollTop=$('cont').scrollHeight;}
+window.send=async()=>{if(!$('msg').value.trim())return;let t=$('msg').value;$('msg').value='';await addDoc(collection(db,"messages"),{senderId:me.id,name:me.name,receiverId:cTab==='public'?'public':cPriv,text:t,time:Date.now()});}
+window.upImg=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{let i=new Image();i.onload=async()=>{let c=document.createElement('canvas'),M=600,w=i.width,h=i.height;if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);let b=c.toDataURL('image/jpeg',0.6);await addDoc(collection(db,"messages"),{senderId:me.id,name:me.name,receiverId:cTab==='public'?'public':cPriv,text:'[عکس]',image:b,time:Date.now()});};i.src=ev.target.result};r.readAsDataURL(f);$('file-img').value='';};
+window.toggleEmoji=()=>$('emoji').classList.toggle('h');
+window.addEmoji=x=>{$('msg').value+=x;$('msg').focus();$('emoji').classList.add('h');};
+window.upAv=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{let i=new Image();i.onload=async()=>{let c=document.createElement('canvas'),M=150,w=i.width,h=i.height;if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);let b=c.toDataURL('image/jpeg',0.7);await updateDoc(doc(db,"users",me.id),{avatar:b});alert('عکس آپلود شد');};i.src=ev.target.result};r.readAsDataURL(f);};
+window.saveProf=async()=>{await updateDoc(doc(db,"users",me.id),{name:$('pName').value,bio:$('pBio').value});alert('ذخیره شد');me.name=$('pName').value;me.bio=$('pBio').value;$('wel').innerText=me.name;};
+window.openAdmin=()=>{if(prompt('رمز:')!=='357753')return;tab('admin');};
+function rAdm(){let h='';us.forEach(u=>{h+=`<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #333"><div>${u.name} (@${u.username}) ${u.isVerified?'✔️':''} ${u.isBlocked?'🚫':''}</div><div><button onclick="tV('${u.id}',${u.isVerified})" style="width:auto;background:#3b82f6;padding:5px">تیک</button><button onclick="tB('${u.id}',${u.isBlocked})" style="width:auto;background:#f59e0b;padding:5px">بلاک</button></div></div>`});$('tab-admin').innerHTML=h;}
+window.tV=async(i,s)=>await updateDoc(doc(db,"users",i),{isVerified:!s});
+window.tB=async(i,s)=>await updateDoc(doc(db,"users",i),{isBlocked:!s});
+let sv=localStorage.getItem('u');if(sv){me=JSON.parse(sv);start();}
+</script>
 </body>
-</html>
+                                                                                                             </html>
