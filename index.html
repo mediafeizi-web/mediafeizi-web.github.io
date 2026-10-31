@@ -2,18 +2,116 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تست</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت پرو</title>
+    <style>
+        body { background: #000; color: #fff; font-family: Tahoma; margin: 0; padding: 20px; }
+        .box { background: #111; padding: 20px; border-radius: 10px; max-width: 400px; margin: 0 auto; border: 1px solid #333; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; font-family: Tahoma; }
+        button { background: #4f46e5; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
+        #chat-box { height: 300px; overflow-y: scroll; background: #000; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; }
+        .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; background: #222; }
+        .msg b { color: #818cf8; }
+    </style>
 </head>
-<body style="background:#000; color:white; text-align:center; padding-top:50px;">
-    <h1 style="color:red;" id="status">در حال لود شدن...</h1>
-    <button onclick="alert('دکمه کار می‌کند!')" style="padding:20px; font-size:20px;">تست دکمه</button>
-    <script>
-        window.onerror = function(msg) {
-            document.getElementById('status').innerText = "خطا در لود کدها: " + msg;
-            document.getElementById('status').style.color = "red";
+<body>
+
+    <!-- فرم ورود -->
+    <div id="login-screen" class="box">
+        <h2 style="text-align:center; color: #818cf8;">چت پرو</h2>
+        <input type="text" id="name" placeholder="نام شما">
+        <input type="text" id="user" placeholder="نام کاربری (انگلیسی)">
+        <input type="password" id="pass" placeholder="رمز عبور">
+        <input type="text" id="code" placeholder="کد دمو (12345)">
+        <button onclick="login()">ورود / ثبت‌نام</button>
+    </div>
+
+    <!-- صفحه چت -->
+    <div id="chat-screen" class="box" style="display: none;">
+        <h3 id="welcome" style="text-align:center;"></h3>
+        <div id="chat-box"></div>
+        <input type="text" id="msg" placeholder="پیام..." onkeypress="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()">ارسال</button>
+        <button onclick="logout()" style="background: #ef4444; margin-top: 10px;">خروج</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",
+            authDomain: "chat-pro-ff65d.firebaseapp.com",
+            projectId: "chat-pro-ff65d",
+            storageBucket: "chat-pro-ff65d.firebasestorage.app",
+            messagingSenderId: "804620446100",
+            appId: "1:804620446100:web:776a714048fb732b93c781"
         };
-        document.getElementById('status').innerText = "کدها با موفقیت لود شدند!";
-        document.getElementById('status').style.color = "green";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let me = null;
+
+        window.login = function() {
+            const name = document.getElementById('name').value;
+            const user = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            const code = document.getElementById('code').value;
+
+            if (code !== '12345') return alert('کد دمو اشتباه است!');
+            if (!name || !user || !pass) return alert('همه فیلدها الزامی است!');
+
+            me = { name: name, user: user };
+            localStorage.setItem('cp_user', JSON.stringify(me));
+
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            document.getElementById('welcome').innerText = 'خوش آمدی ' + name;
+
+            loadChat();
+        }
+
+        window.logout = function() {
+            localStorage.removeItem('cp_user');
+            location.reload();
+        }
+
+        function loadChat() {
+            const q = query(collection(db, "messages"), orderBy("time", "asc"));
+            onSnapshot(q, (snap) => {
+                let html = '';
+                snap.forEach(d => {
+                    let m = d.data();
+                    html += `<div class="msg"><b>${m.name}:</b> ${m.text}</div>`;
+                });
+                const box = document.getElementById('chat-box');
+                box.innerHTML = html;
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.sendMsg = async function() {
+            const input = document.getElementById('msg');
+            if (!input.value.trim()) return;
+            const text = input.value;
+            input.value = '';
+
+            await addDoc(collection(db, "messages"), {
+                name: me.name,
+                text: text,
+                time: Date.now()
+            });
+        }
+
+        // چک کردن لاگین قبلی
+        const saved = localStorage.getItem('cp_user');
+        if (saved) {
+            me = JSON.parse(saved);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            document.getElementById('welcome').innerText = 'خوش آمدی ' + me.name;
+            loadChat();
+        }
     </script>
 </body>
-</html>
+    </html>
