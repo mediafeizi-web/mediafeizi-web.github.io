@@ -2,32 +2,102 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تست اتصال</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت پرو</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        * { box-sizing: border-box; font-family: Vazirmatn, Tahoma; }
+        body { background-color: #09090b; color: #fff; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .box { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { text-align: center; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #6366f1; background: rgba(255,255,255,0.1); }
+        button { background: linear-gradient(135deg, #6366f1, #a855f7); border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
+        button:active { transform: scale(0.97); }
+        .chat-box { height: 350px; overflow-y: auto; background: #000; border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-box::-webkit-scrollbar { width: 4px; }
+        .chat-box::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .msg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 16px 16px 16px 0; width: fit-content; max-width: 85%; font-size: 14px; animation: fadeIn 0.3s ease-out; }
+        .msg.mine { background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 16px 16px 0 16px; align-self: flex-end; box-shadow: 0 4px 15px rgba(99,102,241,0.2); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body style="background:#000; color:#fff; text-align:center; padding-top:50px; font-family:Tahoma;">
-    <h2>تست اتصال به فایربیس</h2>
-    <div id="status" style="color:yellow; margin:20px;">در حال تلاش برای اتصال...</div>
-    <button onclick="test()" style="padding:15px; font-size:18px; background:blue; color:white;">تست دکمه</button>
+<body>
 
-    <script>
-        window.onerror = function(msg) {
-            document.getElementById('status').innerText = "خطای جاوااسکریپت: " + msg;
-            document.getElementById('status').style.color = "red";
+    <div id="auth" class="box">
+        <h2>چت پرو</h2>
+        <input type="text" id="name" placeholder="نام شما">
+        <input type="text" id="user" placeholder="نام کاربری (انگلیسی)">
+        <input type="password" id="pass" placeholder="رمز عبور">
+        <input type="text" id="code" placeholder="کد دمو (12345)">
+        <button onclick="doLogin()" style="margin-top:15px;">ورود / ثبت‌نام</button>
+    </div>
+
+    <div id="main" class="box" style="display:none;">
+        <h3 id="welcome" style="text-align:center; color:#a855f7; margin-bottom:15px;"></h3>
+        <div id="chat" class="chat-box"></div>
+        <input type="text" id="msg" placeholder="پیام..." onkeypress="if(event.key==='Enter') send()">
+        <button onclick="send()">ارسال</button>
+        <button onclick="logout()" style="background:#ef4444; margin-top:10px; box-shadow:none;">خروج</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",
+            authDomain: "chat-pro-ff65d.firebaseapp.com",
+            projectId: "chat-pro-ff65d",
+            storageBucket: "chat-pro-ff65d.firebasestorage.app",
+            messagingSenderId: "804620446100",
+            appId: "1:804620446100:web:776a714048fb732b93c781"
         };
-        function test() { alert('دکمه کار می‌کند!'); }
-        
-        // تلاش برای دانلود فایربیس
-        let script = document.createElement('script');
-        script.src = "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        script.onload = () => {
-            document.getElementById('status').innerText = "اتصال به گوگل موفق بود! (فیلترشکن شما عالیست)";
-            document.getElementById('status').style.color = "green";
-        };
-        script.onerror = () => {
-            document.getElementById('status').innerText = "خطا: نمی‌توانم به گوگل وصل شوم! فیلترشکن را عوض کنید.";
-            document.getElementById('status').style.color = "red";
-        };
-        document.head.appendChild(script);
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+        let me = null;
+
+        window.doLogin = async function() {
+            const name = document.getElementById('name').value;
+            const user = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            const code = document.getElementById('code').value;
+
+            if (code !== '12345') return alert('کد دمو اشتباهه!');
+            if (!name || !user || !pass) return alert('همه فیلدها الزامی است!');
+
+            await addDoc(collection(db, "users"), { name, user, pass });
+            me = { name, user };
+            
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            document.getElementById('welcome').innerText = 'خوش آمدی ' + name;
+            loadChat();
+        }
+
+        function loadChat() {
+            const q = query(collection(db, "messages"), orderBy("time", "asc"));
+            onSnapshot(q, (snap) => {
+                let html = '';
+                snap.forEach(d => {
+                    let m = d.data();
+                    let isMine = m.name === me.name;
+                    html += `<div class="msg ${isMine ? 'mine' : ''}"><b>${m.name}:</b><br>${m.text}</div>`;
+                });
+                const box = document.getElementById('chat');
+                box.innerHTML = html;
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        window.send = async function() {
+            const text = document.getElementById('msg').value;
+            if(!text) return;
+            document.getElementById('msg').value = '';
+            await addDoc(collection(db, "messages"), { name: me.name, text: text, time: Date.now() });
+        }
+
+        window.logout = function() { location.reload(); }
     </script>
 </body>
 </html>
