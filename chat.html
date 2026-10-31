@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تست اتصال</title>
+</head>
+<body style="background:#000; color:#fff; text-align:center; padding-top:50px; font-family:Tahoma;">
+    <h2>تست اتصال به فایربیس</h2>
+    <div id="status" style="color:yellow; margin:20px;">در حال تلاش برای اتصال...</div>
+    <button onclick="test()" style="padding:15px; font-size:18px; background:blue; color:white;">تست دکمه</button>
+
+    <script>
+        window.onerror = function(msg) {
+            document.getElementById('status').innerText = "خطای جاوااسکریپت: " + msg;
+            document.getElementById('status').style.color = "red";
+        };
+        function test() { alert('دکمه کار می‌کند!'); }
+        
+        // تلاش برای دانلود فایربیس
+        let script = document.createElement('script');
+        script.src = "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        script.onload = () => {
+            document.getElementById('status').innerText = "اتصال به گوگل موفق بود! (فیلترشکن شما عالیست)";
+            document.getElementById('status').style.color = "green";
+        };
+        script.onerror = () => {
+            document.getElementById('status').innerText = "خطا: نمی‌توانم به گوگل وصل شوم! فیلترشکن را عوض کنید.";
+            document.getElementById('status').style.color = "red";
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
