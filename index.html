@@ -1,82 +1,341 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>چت پرو</title>
-<style>
-*{box-sizing:border-box;font-family:Tahoma}body{background:#000;color:#fff;margin:0;height:100vh;display:flex;flex-direction:column}
-.h{display:none!important}.b{background:#111;padding:15px;border-radius:10px;margin:10px;border:1px solid #333}
-input,button{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #333;background:#222;color:#fff}
-button{background:#4f46e5;border:none;font-weight:bold;cursor:pointer}
-#head{display:flex;justify-content:space-between;padding:10px;background:#111;border-bottom:1px solid #333}
-#cont{flex:1;overflow-y:auto;padding:10px;padding-bottom:80px}
-.m{margin-bottom:10px;padding:10px;border-radius:8px;background:#222;max-width:85%}
-.m.mine{background:#4f46e5;margin-right:auto}.m.other{margin-left:auto}
-.av{width:30px;height:30px;border-radius:50%;object-fit:cover}.img{max-width:100%;border-radius:8px;margin-top:5px}
-#nav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px}
-#nav button{width:auto;background:none;font-size:22px}
-#inp{position:fixed;bottom:60px;left:0;right:0;background:#000;padding:10px;display:flex;gap:5px}
-#inp input{margin:0}#inp button{width:auto;margin:0;padding:10px}
-#emoji{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;padding:10px;background:#222;border-radius:8px;position:fixed;bottom:110px;left:10px;right:10px}
-#emoji span{font-size:24px;cursor:pointer;text-align:center}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت پرو</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1, #a855f7);
+            --bg-dark: #09090b;
+            --bg-panel: #18181b;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+        }
+        * { box-sizing: border-box; font-family: Vazirmatn, Tahoma; }
+        body { background-color: var(--bg-dark); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .hidden { display: none !important; }
+        
+        /* کادرهای شیشه‌ای */
+        .glass { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        
+        .box { background: var(--bg-panel); padding: 20px; border-radius: 20px; margin: 20px auto; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; }
+        
+        input, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 14px; transition: 0.3s; outline: none; }
+        input:focus { border-color: var(--primary); background: rgba(255,255,255,0.05); box-shadow: 0 0 10px rgba(99,102,241,0.2); }
+        
+        button { background: var(--primary-gradient); border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
+        button:active { transform: scale(0.97); }
+        
+        /* هدر */
+        #main-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .avatar-ring { border: 2px solid var(--primary); padding: 2px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(99,102,241,0.5); }
+        .avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+        .admin-btn { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; width: auto; padding: 6px 12px; font-size: 12px; box-shadow: none; margin: 0; }
+        
+        /* محتوا */
+        #content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; scroll-behavior: smooth; }
+        #content-area::-webkit-scrollbar { width: 4px; }
+        #content-area::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        
+        /* پیام‌ها */
+        .msg { margin-bottom: 15px; display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg.mine { background: var(--primary-gradient); margin-right: auto; border-radius: 16px 16px 0 16px; padding: 10px 15px; box-shadow: 0 4px 15px rgba(99,102,241,0.3); }
+        .msg.other { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); margin-left: auto; border-radius: 16px 16px 16px 0; padding: 10px 15px; }
+        
+        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; color: rgba(255,255,255,0.8); }
+        .msg img.chat-img { max-width: 100%; border-radius: 10px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* لیست کاربران */
+        .user-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .user-item:hover { background: rgba(255,255,255,0.05); }
+        
+        /* نوار پایین */
+        #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        #bottom-nav button { width: 60px; height: 60px; background: transparent; box-shadow: none; font-size: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); padding: 0; margin: 0; transition: 0.3s; }
+        #bottom-nav button.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        
+        /* کادر ارسال پیام */
+        #chat-input { position: fixed; bottom: 70px; left: 10px; right: 10px; display: flex; gap: 8px; padding: 8px; border-radius: 30px; z-index: 90; }
+        #chat-input input { margin: 0; flex: 1; border-radius: 20px; padding: 12px 15px; background: transparent; border: none; box-shadow: none; }
+        #chat-input button { width: auto; margin: 0; padding: 10px 15px; border-radius: 20px; }
+        
+        /* ایموجی */
+        #emoji-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 15px; border-radius: 20px; position: fixed; bottom: 140px; left: 10px; right: 10px; z-index: 100; background: rgba(24, 24, 27, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        #emoji-picker span { font-size: 26px; cursor: pointer; text-align: center; transition: 0.2s; }
+        #emoji-picker span:hover { transform: scale(1.2); }
+        
+        .admin-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); border-radius: 10px; margin-bottom: 5px;}
+        .admin-row button { width: auto; padding: 6px 12px; font-size: 12px; margin: 0 2px; }
+    </style>
 </head>
 <body>
-<div id="auth" class="b" style="margin-top:50px">
-<h2 style="text-align:center;color:#818cf8">چت پرو</h2>
-<input id="name" placeholder="نام"><input id="user" placeholder="نام کاربری (انگلیسی)">
-<input id="pass" type="password" placeholder="رمز"><input id="code" placeholder="کد دمو (12345)">
-<button onclick="login()">ورود / ثبت‌نام</button></div>
-<div id="head" class="h"><div style="display:flex;align-items:center;gap:10px"><img id="myAv" class="av"><b id="wel"></b></div><button onclick="openAdmin()" style="width:auto;background:#ef4444;padding:5px 10px;font-size:12px">مدیریت</button></div>
-<div id="cont" class="h">
-<div id="tab-public"></div>
-<div id="tab-private" class="h"><div id="privList"></div><div id="privChat" class="h"><button onclick="back()" style="background:#333">بازگشت</button><div id="privMsgs"></div></div></div>
-<div id="tab-profile" class="h"><div class="b"><img id="profAv" class="av" style="width:60px;height:60px;display:block;margin:auto"><input type="file" id="file-av" class="h" onchange="upAv(event)"><button onclick="document.getElementById('file-av').click()" style="background:#333">عکس</button><input id="pName" placeholder="نام"><input id="pBio" placeholder="بیو"><button onclick="saveProf()">ذخیره</button></div></div>
-<div id="tab-admin" class="h"></div>
-</div>
-<div id="nav" class="h"><button onclick="tab('public')">🌐</button><button onclick="tab('private')">💬</button><button onclick="tab('profile')">👤</button></div>
-<div id="inp" class="h"><label for="file-img" style="font-size:22px;cursor:pointer">📎</label><input type="file" id="file-img" class="h" onchange="upImg(event)"><button onclick="toggleEmoji()" style="background:none;font-size:22px">😀</button><input id="msg" onkeypress="if(event.key==='Enter')send()"><button onclick="send()">ارسال</button></div>
-<div id="emoji" class="h"><span onclick="addEmoji('😀')">😀</span><span onclick="addEmoji('😂')">😂</span><span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('😎')">😎</span><span onclick="addEmoji('👍')">👍</span><span onclick="addEmoji('❤️')">❤️</span><span onclick="addEmoji('🔥')">🔥</span><span onclick="addEmoji('🙏')">🙏</span><span onclick="addEmoji('💯')">💯</span><span onclick="addEmoji('👋')">👋</span><span onclick="addEmoji('🎉')">🎉</span><span onclick="addEmoji('💔')">💔</span></div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-const db = getFirestore(initializeApp({apiKey:"AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",authDomain:"chat-pro-ff65d.firebaseapp.com",projectId:"chat-pro-ff65d",storageBucket:"chat-pro-ff65d.firebasestorage.app",messagingSenderId:"804620446100",appId:"1:804620446100:web:776a714048fb732b93c781"}));
-const $ = id => document.getElementById(id);
-let me, us=[], ms=[], cTab='public', cPriv=null;
 
-window.login = async() => {
-let n=$('name').value.trim(), u=$('user').value.trim().toLowerCase(), p=$('pass').value, c=$('code').value;
-if(c!=='12345')return alert('کد دمو 12345');
-if(!n||!u||!p)return alert('کامل پر کن');
-let q=await getDocs(query(collection(db,"users"),where("username","==",u)));
-if(!q.empty){me=q.docs[0].data();me.id=q.docs[0].id;if(me.password!==p)return alert('رمز غلط');if(me.isBlocked)return alert('بلاک شدی');}
-else{let nu={name:n,username:u,password:p,isVerified:false,isBlocked:false,avatar:'',bio:''};let r=await addDoc(collection(db,"users"),nu);nu.id=r.id;me=nu;}
-localStorage.setItem('u',JSON.stringify(me)); start();
-}
-window.out=()=>{localStorage.removeItem('u');location.reload();}
-function start(){
-$('auth').classList.add('h');$('head').classList.remove('h');$('cont').classList.remove('h');$('nav').classList.remove('h');
-$('wel').innerText=me.name;if(me.avatar)$('myAv').src=me.avatar;
-onSnapshot(collection(db,"users"),s=>{us=s.docs.map(d=>({id:d.id,...d.data()}));let m=us.find(u=>u.id===me.id);if(m){if(m.isBlocked){alert('بلاک');out()}me=m;$('wel').innerText=me.name+(me.isVerified?' ✔️':'');if(me.avatar){$('myAv').src=me.avatar;$('profAv').src=me.avatar}if(cTab==='private')rPriv();if(cTab==='admin')rAdm();}});
-onSnapshot(query(collection(db,"messages"),orderBy("time","asc")),s=>{ms=s.docs.map(d=>d.data());if(cTab==='public')rPub();if(cTab==='private'&&cPriv)rPrivMs();});
-tab('public');
-}
-window.tab = t => {cTab=t;cPriv=null;['public','private','profile','admin'].forEach(x=>$('tab-'+x).classList.add('h'));$('inp').classList.add('h');$('emoji').classList.add('h');$('tab-'+t).classList.remove('h');if(t==='public'){$('inp').classList.remove('h');rPub();}if(t==='private'){$('privList').classList.remove('h');$('privChat').classList.add('h');rPriv();}if(t==='profile'){$('pName').value=me.name;$('pBio').value=me.bio||'';}if(t==='admin')rAdm();};
-function rPub(){let h='';ms.filter(m=>m.receiverId==='public').forEach(m=>{let s=us.find(u=>u.id===m.senderId)||{name:m.name,avatar:''};let a=s.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=s.isVerified?' ✔️':'';let i=m.image?`<img src="${m.image}" class="img">`:'';h+=`<div class="m ${m.senderId===me.id?'mine':'other'}"><div><img src="${a}" class="av"><b>${m.name}${t}:</b><br>${m.text}${i}</div></div>`});$('tab-public').innerHTML=h;$('cont').scrollTop=$('cont').scrollHeight;}
-function rPriv(){let h='';us.filter(u=>u.id!==me.id&&!u.isBlocked).forEach(u=>{let a=u.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=u.isVerified?' ✔️':'';h+=`<div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #333;cursor:pointer" onclick="openPriv('${u.id}')"><img src="${a}" class="av"><div><b>${u.name}${t}</b><br><small>@${u.username}</small></div></div>`});$('privList').innerHTML=h;}
-window.openPriv=id=>{cPriv=id;$('privList').classList.add('h');$('privChat').classList.remove('h');$('inp').classList.remove('h');rPrivMs();};
-window.back=()=>{cPriv=null;$('privChat').classList.add('h');$('privList').classList.remove('h');$('inp').classList.add('h');};
-function rPrivMs(){let h='';ms.filter(m=>(m.senderId===me.id&&m.receiverId===cPriv)||(m.senderId===cPriv&&m.receiverId===me.id)).forEach(m=>{let s=us.find(u=>u.id===m.senderId)||{name:m.name,avatar:''};let a=s.avatar||'https://cdn-icons-png.flaticon.com/512/149/149071.png';let t=s.isVerified?' ✔️':'';let i=m.image?`<img src="${m.image}" class="img">`:'';h+=`<div class="m ${m.senderId===me.id?'mine':'other'}"><div><img src="${a}" class="av"><b>${m.name}${t}:</b><br>${m.text}${i}</div></div>`});$('privMsgs').innerHTML=h;$('cont').scrollTop=$('cont').scrollHeight;}
-window.send=async()=>{if(!$('msg').value.trim())return;let t=$('msg').value;$('msg').value='';await addDoc(collection(db,"messages"),{senderId:me.id,name:me.name,receiverId:cTab==='public'?'public':cPriv,text:t,time:Date.now()});}
-window.upImg=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{let i=new Image();i.onload=async()=>{let c=document.createElement('canvas'),M=600,w=i.width,h=i.height;if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);let b=c.toDataURL('image/jpeg',0.6);await addDoc(collection(db,"messages"),{senderId:me.id,name:me.name,receiverId:cTab==='public'?'public':cPriv,text:'[عکس]',image:b,time:Date.now()});};i.src=ev.target.result};r.readAsDataURL(f);$('file-img').value='';};
-window.toggleEmoji=()=>$('emoji').classList.toggle('h');
-window.addEmoji=x=>{$('msg').value+=x;$('msg').focus();$('emoji').classList.add('h');};
-window.upAv=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{let i=new Image();i.onload=async()=>{let c=document.createElement('canvas'),M=150,w=i.width,h=i.height;if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);let b=c.toDataURL('image/jpeg',0.7);await updateDoc(doc(db,"users",me.id),{avatar:b});alert('عکس آپلود شد');};i.src=ev.target.result};r.readAsDataURL(f);};
-window.saveProf=async()=>{await updateDoc(doc(db,"users",me.id),{name:$('pName').value,bio:$('pBio').value});alert('ذخیره شد');me.name=$('pName').value;me.bio=$('pBio').value;$('wel').innerText=me.name;};
-window.openAdmin=()=>{if(prompt('رمز:')!=='357753')return;tab('admin');};
-function rAdm(){let h='';us.forEach(u=>{h+=`<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #333"><div>${u.name} (@${u.username}) ${u.isVerified?'✔️':''} ${u.isBlocked?'🚫':''}</div><div><button onclick="tV('${u.id}',${u.isVerified})" style="width:auto;background:#3b82f6;padding:5px">تیک</button><button onclick="tB('${u.id}',${u.isBlocked})" style="width:auto;background:#f59e0b;padding:5px">بلاک</button></div></div>`});$('tab-admin').innerHTML=h;}
-window.tV=async(i,s)=>await updateDoc(doc(db,"users",i),{isVerified:!s});
-window.tB=async(i,s)=>await updateDoc(doc(db,"users",i),{isBlocked:!s});
-let sv=localStorage.getItem('u');if(sv){me=JSON.parse(sv);start();}
-</script>
-</body>
-                                                                                                             </html>
+    <!-- صفحه ورود -->
+    <div id="auth-screen" class="box" style="margin-top: 80px;">
+        <h1 style="text-align:center; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 32px; margin-bottom: 20px;">چت پرو</h1>
+        <input type="text" id="name" placeholder="نام شما">
+        <input type="text" id="user" placeholder="نام کاربری (انگلیسی)">
+        <input type="password" id="pass" placeholder="رمز عبور">
+        <input type="text" id="code" placeholder="کد دمو (12345)">
+        <button onclick="login()" style="margin-top: 15px;">ورود / ثبت‌نام</button>
+    </div>
+
+    <!-- هدر اصلی -->
+    <div id="main-header" class="glass hidden">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="avatar-ring"><img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"></div>
+            <span id="welcome" style="font-weight:bold; font-size: 15px;"></span>
+        </div>
+        <button class="admin-btn" onclick="switchTab('admin')">مدیریت</button>
+    </div>
+
+    <!-- محتوای اصلی -->
+    <div id="content-area" class="hidden">
+        <!-- چت عمومی -->
+        <div id="tab-public" class="tab-content">
+            <div id="public-msgs"></div>
+        </div>
+        
+        <!-- چت خصوصی -->
+        <div id="tab-private" class="tab-content hidden">
+            <div id="private-list"></div>
+            <div id="private-chat" class="hidden">
+                <button onclick="backToPrivateList()" style="background:rgba(255,255,255,0.1); margin-bottom:15px; width:auto;">🔙 بازگشت</button>
+                <div id="private-msgs"></div>
+            </div>
+        </div>
+
+        <!-- پروفایل -->
+        <div id="tab-profile" class="tab-content hidden">
+            <div class="box">
+                <h3 style="text-align:center; margin-bottom:15px;">پروفایل من</h3>
+                <div class="avatar-ring" style="width:90px; height:90px; margin:auto; margin-bottom:15px;">
+                    <img id="prof-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                </div>
+                <input type="file" id="avatar-file" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+                <button onclick="document.getElementById('avatar-file').click()" style="background:rgba(255,255,255,0.05); margin-bottom:15px;">تغییر عکس پروفایل</button>
+                
+                <label style="font-size:12px; color:var(--text-muted); margin-right:5px;">نام</label>
+                <input type="text" id="prof-name">
+                
+                <label style="font-size:12px; color:var(--text-muted); margin-right:5px;">بیوگرافی</label>
+                <input type="text" id="prof-bio">
+                
+                <button onclick="saveProfile()" style="margin-top:15px;">ذخیره تغییرات</button>
+            </div>
+        </div>
+
+        <!-- پنل مدیریت -->
+        <div id="tab-admin" class="tab-content hidden">
+            <div id="admin-list"></div>
+        </div>
+    </div>
+
+    <!-- نوار پایین -->
+    <div id="bottom-nav" class="glass hidden">
+        <button id="nav-public" onclick="switchTab('public')">🌐<span style="font-size:10px; margin-top:3px;">عمومی</span></button>
+        <button id="nav-private" onclick="switchTab('private')">💬<span style="font-size:10px; margin-top:3px;">خصوصی</span></button>
+        <button id="nav-profile" onclick="switchTab('profile')">👤<span style="font-size:10px; margin-top:3px;">پروفایل</span></button>
+    </div>
+
+    <!-- نوار ارسال پیام -->
+    <div id="chat-input" class="glass hidden">
+        <label for="chat-file" style="cursor:pointer; font-size:24px; padding:5px; color:var(--text-muted);">📎</label>
+        <input type="file" id="chat-file" accept="image/*" style="display:none;" onchange="uploadChatImage(event)">
+        <button onclick="toggleEmoji()" style="background:none; border:none; box-shadow:none; color:var(--text-muted); font-size:24px; padding:5px;">😀</button>
+        <input type="text" id="msg" placeholder="پیام..." onkeypress="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()" style="padding:12px 20px;">ارسال</button>
+    </div>
+    
+    <div id="emoji-picker" class="hidden">
+        <span onclick="addEmoji('😀')">😀</span><span onclick="addEmoji('😂')">😂</span><span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('😎')">😎</span><span onclick="addEmoji('🤔')">🤔</span><span onclick="addEmoji('👍')">👍</span><span onclick="addEmoji('❤️')">❤️</span><span onclick="addEmoji('🔥')">🔥</span><span onclick="addEmoji('🎉')">🎉</span><span onclick="addEmoji('🙏')">🙏</span><span onclick="addEmoji('💯')">💯</span><span onclick="addEmoji('👋')">👋</span>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",
+            authDomain: "chat-pro-ff65d.firebaseapp.com",
+            projectId: "chat-pro-ff65d",
+            storageBucket: "chat-pro-ff65d.firebasestorage.app",
+            messagingSenderId: "804620446100",
+            appId: "1:804620446100:web:776a714048fb732b93c781"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let me = null;
+        let usersList = [];
+        let allMsgs = [];
+        let currentTab = 'public';
+        let currentPrivateUserId = null;
+
+        // ورود
+        window.login = async function() {
+            const name = document.getElementById('name').value.trim();
+            const user = document.getElementById('user').value.trim().toLowerCase();
+            const pass = document.getElementById('pass').value;
+            const code = document.getElementById('code').value;
+
+            if (code !== '12345') return alert('کد دمو اشتباه است!');
+            if (!name || !user || !pass) return alert('همه فیلدها الزامی است!');
+
+            const q = query(collection(db, "users"), where("username", "==", user));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                let u = snap.docs[0].data();
+                u.id = snap.docs[0].id;
+                if (u.password !== pass) return alert('رمز عبور اشتباه است!');
+                if (u.isBlocked) return alert('حساب شما مسدود شده است!');
+                me = u;
+            } else {
+                const newUser = { name, username: user, password: pass, isVerified: false, isBlocked: false, avatar: '', bio: '' };
+                const docRef = await addDoc(collection(db, "users"), newUser);
+                newUser.id = docRef.id;
+                me = newUser;
+            }
+            localStorage.setItem('cp_user', JSON.stringify(me));
+            startChat();
+        }
+
+        window.logout = function() {
+            localStorage.removeItem('cp_user');
+            location.reload();
+        }
+
+        function startChat() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('content-area').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            
+            document.getElementById('welcome').innerText = me.name;
+            if(me.avatar) document.getElementById('my-avatar').src = me.avatar;
+
+            // لیسینر کاربران
+            onSnapshot(collection(db, "users"), (snap) => {
+                usersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const myData = usersList.find(u => u.id === me.id);
+                if (myData) {
+                    if (myData.isBlocked) { alert('شما مسدود شدید!'); logout(); return; }
+                    me = myData;
+                    document.getElementById('welcome').innerText = me.name + (me.isVerified ? ' ✔️' : '');
+                    if(me.avatar) { document.getElementById('my-avatar').src = me.avatar; document.getElementById('prof-avatar').src = me.avatar; }
+                    if(currentTab === 'private') renderPrivateList();
+                    if(currentTab === 'admin') renderAdmin();
+                }
+            });
+
+            // لیسینر پیام‌ها
+            onSnapshot(query(collection(db, "messages"), orderBy("time", "asc")), (snap) => {
+                allMsgs = snap.docs.map(d => d.data());
+                if (currentTab === 'public') renderPublic();
+                if (currentTab === 'private' && currentPrivateUserId) renderPrivateMsgs();
+            });
+
+            switchTab('public');
+        }
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            currentPrivateUserId = null;
+            
+            // آپدیت منوی پایین
+            document.querySelectorAll('#bottom-nav button').forEach(b => b.classList.remove('active'));
+            if(document.getElementById('nav-'+tab)) document.getElementById('nav-'+tab).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('chat-input').classList.add('hidden');
+            document.getElementById('emoji-picker').classList.add('hidden');
+
+            if (tab === 'public') {
+                document.getElementById('tab-public').classList.remove('hidden');
+                document.getElementById('chat-input').classList.remove('hidden');
+                renderPublic();
+            } else if (tab === 'private') {
+                document.getElementById('tab-private').classList.remove('hidden');
+                document.getElementById('private-chat').classList.add('hidden');
+                document.getElementById('private-list').classList.remove('hidden');
+                renderPrivateList();
+            } else if (tab === 'profile') {
+                document.getElementById('tab-profile').classList.remove('hidden');
+                document.getElementById('prof-name').value = me.name;
+                document.getElementById('prof-bio').value = me.bio || '';
+            } else if (tab === 'admin') {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                renderAdmin();
+            }
+        }
+
+        function renderPublic() {
+            let html = '';
+            allMsgs.filter(m => m.receiverId === 'public').forEach(m => {
+                let sender = usersList.find(u => u.id === m.senderId) || { name: m.name, avatar: '' };
+                let av = sender.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                let tick = sender.isVerified ? ' ✔️' : '';
+                let img = m.image ? `<img src="${m.image}" class="chat-img">` : '';
+                let isMine = m.senderId === me.id;
+                
+                html += `<div class="msg ${isMine ? 'mine' : 'other'}">
+                    <div style="width:100%;">
+                        <div class="msg-header">
+                            ${!isMine ? `<img src="${av}" class="avatar" style="width:24px;height:24px;">` : ''}
+                            <b>${m.name}${tick}</b>
+                        </div>
+                        <div>${m.text}${img}</div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('public-msgs').innerHTML = html;
+            document.getElementById('content-area').scrollTop = document.getElementById('content-area').scrollHeight;
+        }
+
+        function renderPrivateList() {
+            let html = '';
+            usersList.filter(u => u.id !== me.id && !u.isBlocked).forEach(u => {
+                let av = u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                let tick = u.isVerified ? ' ✔️' : '';
+                html += `<div class="user-item" onclick="openPrivateChat('${u.id}')">
+                    <div class="avatar-ring"><img src="${av}" class="avatar"></div>
+                    <div><b style="font-size:15px;">${u.name}${tick}</b><br><small style="color:var(--text-muted);">@${u.username}</small></div>
+                </div>`;
+            });
+            document.getElementById('private-list').innerHTML = html;
+        }
+
+        window.openPrivateChat = function(id) {
+            currentPrivateUserId = id;
+            document.getElementById('private-list').classList.add('hidden');
+            document.getElementById('private-chat').classList.remove('hidden');
+            document.getElementById('chat-input').classList.remove('hidden');
+            renderPrivateMsgs();
+        }
+
+        window.backToPrivateList = function() {
+            currentPrivateUserId = null;
+            document.getElementById('private-chat').classList.add('hidden');
+            document.getElementById('private-list').classList.remove('hidden');
+            document.getElementById('chat-input').classList.add('hidden');
+        }
+
+        function renderPrivateMsgs() {
+            let html = '';
+            allMsgs.filter(m => (m.senderId === me.id && m.receiverId === currentPrivateUserId) || (m.senderId === currentPrivateUserId && m.receiverId === me.id)).forEach(m => {
+                let sender = usersList.find(u => u.id === m.senderId) || { name: m.name, avatar: '' };
+                let av = sender.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                let tick = sender.isVerified ? ' ✔️' : '';
+                let img = m.image ? `<img src="${m.image}" class="chat-img">` : '';
+                let isMine = m.senderId === me.id;
+                
+                html += `<div class="msg ${isMine ? 'mine' : 'other'}">
+                    <div style="width:100%;">
+                        <div clas
