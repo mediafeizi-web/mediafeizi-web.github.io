@@ -2,91 +2,18 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>چت پرو</title>
-    <style>
-        body { background: #000; color: #fff; font-family: Tahoma; padding: 20px; text-align: center; }
-        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; }
-        button { background: #4f46e5; font-weight: bold; border: none; cursor: pointer; }
-        .box { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; max-width: 400px; margin: auto; }
-        .msg { background: #1f1f1f; padding: 10px; border-radius: 8px; margin: 5px 0; text-align: right; }
-    </style>
+    <title>تست</title>
 </head>
-<body>
-    <div id="auth" class="box">
-        <h2>ثبت نام چت پرو</h2>
-        <input type="text" id="name" placeholder="نام شما">
-        <input type="text" id="user" placeholder="نام کاربری (انگلیسی)">
-        <input type="password" id="pass" placeholder="رمز عبور">
-        <input type="text" id="code" placeholder="کد دمو (12345)">
-        <button onclick="register()">ثبت نام</button>
-    </div>
-
-    <div id="chat" class="box" style="display:none;">
-        <h2 id="welcome"></h2>
-        <div id="msgs" style="height: 300px; overflow-y: scroll; margin-bottom: 10px; background: #000; padding: 10px; border-radius: 8px;"></div>
-        <input type="text" id="msg" placeholder="پیامت را بنویس...">
-        <button onclick="sendMsg()">ارسال</button>
-        <button onclick="logout()" style="background: #ef4444;">خروج</button>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",
-            authDomain: "chat-pro-ff65d.firebaseapp.com",
-            projectId: "chat-pro-ff65d",
-            storageBucket: "chat-pro-ff65d.firebasestorage.app",
-            messagingSenderId: "804620446100",
-            appId: "1:804620446100:web:776a714048fb732b93c781"
+<body style="background:#000; color:white; text-align:center; padding-top:50px;">
+    <h1 style="color:red;" id="status">در حال لود شدن...</h1>
+    <button onclick="alert('دکمه کار می‌کند!')" style="padding:20px; font-size:20px;">تست دکمه</button>
+    <script>
+        window.onerror = function(msg) {
+            document.getElementById('status').innerText = "خطا در لود کدها: " + msg;
+            document.getElementById('status').style.color = "red";
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let me = null;
-
-        window.register = async function() {
-            const name = document.getElementById('name').value;
-            const user = document.getElementById('user').value;
-            const pass = document.getElementById('pass').value;
-            const code = document.getElementById('code').value;
-
-            if(code !== '12345') return alert('کد دمو اشتباهه!');
-            if(!name || !user || !pass) return alert('همه فیلدها الزامی است!');
-
-            await addDoc(collection(db, "users"), { name, user, pass });
-            me = { name, user };
-            
-            document.getElementById('auth').style.display = 'none';
-            document.getElementById('chat').style.display = 'block';
-            document.getElementById('welcome').innerText = 'خوش اومدی ' + name;
-            
-            loadChat();
-        }
-
-        function loadChat() {
-            const q = query(collection(db, "messages"), orderBy("time", "asc"));
-            onSnapshot(q, (snap) => {
-                let html = '';
-                snap.forEach(d => {
-                    let m = d.data();
-                    html += `<div class="msg"><b>${m.name}:</b> ${m.text}</div>`;
-                });
-                document.getElementById('msgs').innerHTML = html;
-                document.getElementById('msgs').scrollTop = 99999;
-            });
-        }
-
-        window.sendMsg = async function() {
-            const text = document.getElementById('msg').value;
-            if(!text) return;
-            document.getElementById('msg').value = '';
-            await addDoc(collection(db, "messages"), { name: me.name, text: text, time: Date.now() });
-        }
-
-        window.logout = function() { location.reload(); }
+        document.getElementById('status').innerText = "کدها با موفقیت لود شدند!";
+        document.getElementById('status').style.color = "green";
     </script>
 </body>
 </html>
