@@ -5,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>چت پرو</title>
     <style>
-        body { background: #000; color: #fff; font-family: Tahoma; margin: 0; padding: 20px; }
-        .box { background: #111; padding: 20px; border-radius: 10px; max-width: 400px; margin: 0 auto; border: 1px solid #333; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; font-family: Tahoma; }
-        button { background: #4f46e5; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        #chat-box { height: 300px; overflow-y: scroll; background: #000; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; }
-        .msg { margin-bottom: 10px; padding: 8px; border-radius: 5px; background: #222; }
-        .msg b { color: #818cf8; }
+        body { background: #000; color: #fff; font-family: Tahoma; margin: 0; padding: 15px; box-sizing: border-box; }
+        .box { background: #111; padding: 15px; border-radius: 10px; max-width: 500px; margin: 0 auto; border: 1px solid #333; }
+        input, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; font-family: Tahoma; }
+        button { background: #4f46e5; border: none; font-weight: bold; cursor: pointer; }
+        #chat-box { height: 350px; overflow-y: scroll; background: #000; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 8px; background: #222; display: flex; align-items: center; gap: 10px; }
+        .msg img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .avatar-large { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #4f46e5; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .admin-btn { background: #ef4444; width: auto; padding: 8px 15px; font-size: 12px; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 10px; margin-bottom: 5px; border-radius: 5px; }
+        .user-row button { width: auto; padding: 5px 10px; margin: 0 2px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <!-- فرم ورود -->
-    <div id="login-screen" class="box">
+    <!-- صفحه ورود -->
+    <div id="auth-screen" class="box">
         <h2 style="text-align:center; color: #818cf8;">چت پرو</h2>
         <input type="text" id="name" placeholder="نام شما">
         <input type="text" id="user" placeholder="نام کاربری (انگلیسی)">
@@ -28,16 +33,35 @@
 
     <!-- صفحه چت -->
     <div id="chat-screen" class="box" style="display: none;">
-        <h3 id="welcome" style="text-align:center;"></h3>
+        <div class="header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img id="my-avatar" class="avatar-large" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+                <div>
+                    <div id="welcome" style="font-weight:bold;"></div>
+                    <input type="file" id="avatar-file" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+                    <button onclick="document.getElementById('avatar-file').click()" style="width:auto; padding:4px 8px; font-size:10px; background:transparent; border:1px solid #4f46e5; color:#818cf8;">تغییر عکس</button>
+                </div>
+            </div>
+            <button class="admin-btn" onclick="openAdmin()">مدیریت</button>
+        </div>
+        
         <div id="chat-box"></div>
+        
         <input type="text" id="msg" placeholder="پیام..." onkeypress="if(event.key==='Enter') sendMsg()">
         <button onclick="sendMsg()">ارسال</button>
-        <button onclick="logout()" style="background: #ef4444; margin-top: 10px;">خروج</button>
+        <button onclick="logout()" style="background: #333; margin-top: 10px;">خروج</button>
+    </div>
+
+    <!-- پنل مدیریت -->
+    <div id="admin-screen" class="box" style="display: none;">
+        <h3 style="color:#ef4444; text-align:center;">پنل مدیریت</h3>
+        <div id="admin-list"></div>
+        <button onclick="closeAdmin()" style="background:#333; margin-top:10px;">بازگشت به چت</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCpksdl0L0z81tNJBMj_PjOQMS-kcn_Ceg",
@@ -51,24 +75,38 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let me = null;
+        let usersList = [];
 
-        window.login = function() {
-            const name = document.getElementById('name').value;
-            const user = document.getElementById('user').value;
+        // ورود / ثبت نام
+        window.login = async function() {
+            const name = document.getElementById('name').value.trim();
+            const user = document.getElementById('user').value.trim().toLowerCase();
             const pass = document.getElementById('pass').value;
             const code = document.getElementById('code').value;
 
             if (code !== '12345') return alert('کد دمو اشتباه است!');
             if (!name || !user || !pass) return alert('همه فیلدها الزامی است!');
 
-            me = { name: name, user: user };
+            const q = query(collection(db, "users"), where("username", "==", user));
+            const snap = await getDocs(q);
+
+            if (!snap.empty) {
+                // ورود
+                let u = snap.docs[0].data();
+                u.id = snap.docs[0].id;
+                if (u.password !== pass) return alert('رمز عبور اشتباه است!');
+                if (u.isBlocked) return alert('حساب شما مسدود شده است!');
+                me = u;
+            } else {
+                // ثبت نام
+                const newUser = { name, username: user, password: pass, isVerified: false, isBlocked: false, avatar: '' };
+                const docRef = await addDoc(collection(db, "users"), newUser);
+                newUser.id = docRef.id;
+                me = newUser;
+            }
+
             localStorage.setItem('cp_user', JSON.stringify(me));
-
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('chat-screen').style.display = 'block';
-            document.getElementById('welcome').innerText = 'خوش آمدی ' + name;
-
-            loadChat();
+            startChat();
         }
 
         window.logout = function() {
@@ -76,13 +114,45 @@
             location.reload();
         }
 
-        function loadChat() {
+        function startChat() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            document.getElementById('welcome').innerText = me.name + (me.isVerified ? ' ✔️' : '');
+            if (me.avatar) document.getElementById('my-avatar').src = me.avatar;
+            listenUsers();
+            listenMessages();
+        }
+
+        // گوش دادن به کاربران
+        function listenUsers() {
+            onSnapshot(collection(db, "users"), (snap) => {
+                usersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const myData = usersList.find(u => u.id === me.id);
+                if (myData) {
+                    if (myData.isBlocked) { alert('شما مسدود شدید!'); logout(); return; }
+                    me = myData;
+                    localStorage.setItem('cp_user', JSON.stringify(me));
+                    document.getElementById('welcome').innerText = me.name + (me.isVerified ? ' ✔️' : '');
+                    if (me.avatar) document.getElementById('my-avatar').src = me.avatar;
+                }
+            });
+        }
+
+        // گوش دادن به پیام‌ها
+        function listenMessages() {
             const q = query(collection(db, "messages"), orderBy("time", "asc"));
             onSnapshot(q, (snap) => {
                 let html = '';
                 snap.forEach(d => {
                     let m = d.data();
-                    html += `<div class="msg"><b>${m.name}:</b> ${m.text}</div>`;
+                    let sender = usersList.find(u => u.id === m.senderId);
+                    let avatar = sender && sender.avatar ? sender.avatar : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    let vTick = sender && sender.isVerified ? ' ✔️' : '';
+                    html += `
+                    <div class="msg">
+                        <img src="${avatar}">
+                        <div><b>${m.name}${vTick}:</b> ${m.text}</div>
+                    </div>`;
                 });
                 const box = document.getElementById('chat-box');
                 box.innerHTML = html;
@@ -95,23 +165,74 @@
             if (!input.value.trim()) return;
             const text = input.value;
             input.value = '';
-
-            await addDoc(collection(db, "messages"), {
-                name: me.name,
-                text: text,
-                time: Date.now()
-            });
+            await addDoc(collection(db, "messages"), { senderId: me.id, name: me.name, text: text, time: Date.now() });
         }
 
-        // چک کردن لاگین قبلی
-        const saved = localStorage.getItem('cp_user');
-        if (saved) {
-            me = JSON.parse(saved);
-            document.getElementById('login-screen').style.display = 'none';
+        // آپلود عکس پروفایل
+        window.uploadAvatar = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 150;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } }
+                    else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                    await updateDoc(doc(db, "users", me.id), { avatar: base64 });
+                    alert('عکس پروفایل تغییر کرد!');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // پنل مدیریت
+        window.openAdmin = function() {
+            if (prompt('رمز مدیریت:') !== '357753') return;
+            document.getElementById('chat-screen').style.display = 'none';
+            document.getElementById('admin-screen').style.display = 'block';
+            renderAdminList();
+        }
+
+        window.closeAdmin = function() {
+            document.getElementById('admin-screen').style.display = 'none';
             document.getElementById('chat-screen').style.display = 'block';
-            document.getElementById('welcome').innerText = 'خوش آمدی ' + me.name;
-            loadChat();
         }
+
+        function renderAdminList() {
+            let html = '';
+            usersList.forEach(u => {
+                html += `
+                <div class="user-row">
+                    <div>${u.name} (@${u.username}) ${u.isVerified?'✔️':''} ${u.isBlocked?'🚫':''}</div>
+                    <div>
+                        <button onclick="toggleVerify('${u.id}', ${u.isVerified})" style="background:#3b82f6;">تیک</button>
+                        <button onclick="toggleBlock('${u.id}', ${u.isBlocked})" style="background:#f59e0b;">بلاک</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('admin-list').innerHTML = html;
+        }
+
+        window.toggleVerify = async function(id, status) {
+            await updateDoc(doc(db, "users", id), { isVerified: !status });
+            renderAdminList();
+        }
+
+        window.toggleBlock = async function(id, status) {
+            await updateDoc(doc(db, "users", id), { isBlocked: !status });
+            renderAdminList();
+        }
+
+        // بررسی لاگین قبلی
+        const saved = localStorage.getItem('cp_user');
+        if (saved) { me = JSON.parse(saved); startChat(); }
     </script>
 </body>
-    </html>
+</html>
