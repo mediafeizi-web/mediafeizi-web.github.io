@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت چت پرو</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style> body { font-family: Vazirmatn, sans-serif; background-color: #1e293b; color: white; } </style>
+</head>
+<body class="p-4 pb-20">
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-6 bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+            <h1 class="text-xl font-bold text-red-400">پنل مدیریت چت پرو 🛡️</h1>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all">بازگشت به اپ</a>
+        </header>
+
+        <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <h2 class="mb-4 text-gray-300 font-bold">لیست کاربران سیستم</h2>
+            <div id="admin-users" class="flex flex-col gap-3">
+                <p class="text-center text-gray-500">در حال دریافت اطلاعات...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://tdmhcqiwwzkzgdzvikiu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Oo570G6D0UYC2Sny9xZGjA_qSEo-bhi';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadAdminUsers() {
+            const { data: users, error } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+            const list = document.getElementById('admin-users');
+            
+            if (error) {
+                list.innerHTML = `<p class="text-red-400 text-center">خطا در دسترسی: ${error.message}</p>`;
+                return;
+            }
+
+            if (!users || users.length === 0) {
+                list.innerHTML = `<p class="text-gray-400 text-center">هیچ کاربری یافت نشد.</p>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            users.forEach(u => {
+                const statusColor = u.is_blocked ? 'border-red-500 bg-red-900/20' : 'border-slate-700 bg-slate-900';
+                const verifyBtnText = u.is_verified ? 'حذف تیک آبی' : 'دادن تیک آبی';
+                const blockBtnText = u.is_blocked ? 'رفع مسدودی' : 'مسدود کردن';
+                const blockBtnColor = u.is_blocked ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-600 hover:bg-orange-700';
+                const verifyBtnColor = u.is_verified ? 'bg-gray-600 hover:bg-gray-700' : 'bg-blue-600 hover:bg-blue-700';
+                const avatar = u.avatar_url || `https://ui-avatars.com/api/?name=${u.display_name || 'User'}&background=random`;
+
+                list.innerHTML += `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-l-4 ${statusColor} p-4 rounded-lg gap-4 transition-all">
+                        <div class="flex items-center gap-3">
+                            <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-600">
+                            <div>
+                                <div class="font-bold text-sm">${u.display_name || 'بدون نام'} <span class="text-xs text-gray-400 font-normal" dir="ltr">(${u.phone})</span></div>
+                                <div class="text-sm text-gray-400" dir="ltr">@${u.username || 'user'}</div>
+                                <div class="text-[10px] text-gray-500 mt-1">ID: ${u.id.substring(0,8)}...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            <button onclick="toggleVerify('${u.id}', ${u.is_verified})" class="${verifyBtnColor} px-3 py-2 rounded-md transition-all">${verifyBtnText}</button>
+                            <button onclick="toggleBlock('${u.id}', ${u.is_blocked})" class="${blockBtnColor} px-3 py-2 rounded-md transition-all">${blockBtnText}</button>
+                            <button onclick="deleteUser('${u.id}')" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md transition-all">حذف کامل</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function toggleVerify(id, currentStatus) {
+            await supabaseClient.from('profiles').update({ is_verified: !currentStatus }).eq('id', id);
+            loadAdminUsers();
+        }
+
+        async function toggleBlock(id, currentStatus) {
+            await supabaseClient.from('profiles').update({ is_blocked: !currentStatus }).eq('id', id);
+            loadAdminUsers();
+        }
+
+        async function deleteUser(id) {
+            if(confirm('آیا از حذف این کاربر مطمئن هستید؟ تمام پیام‌های او نیز حذف می‌شود.')) {
+                await supabaseClient.from('messages').delete().or(`sender_id.eq.${id},receiver_id.eq.${id}`);
+                await supabaseClient.from('profiles').delete().eq('id', id);
+                loadAdminUsers();
+            }
+        }
+
+        loadAdminUsers();
+    </script>
+</body>
+</html>
