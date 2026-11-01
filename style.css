@@ -1,0 +1,26 @@
+body { 
+    font-family: Vazirmatn, sans-serif; 
+    background-color: #0f172a; 
+    color: white; 
+}
+.hidden { 
+    display: none !important; 
+}
+.verified-badge { 
+    color: #3b82f6; 
+    display: inline-block; 
+    width: 16px; 
+    height: 16px; 
+    margin-right: 4px;
+}
+.chat-container { 
+    height: calc(100vh - 150px); 
+    overflow-y: auto; 
+}
+.chat-container::-webkit-scrollbar { 
+    width: 6px; 
+}
+.chat-container::-webkit-scrollbar-thumb { 
+    background: #475569; 
+    border-radius: 10px; 
+}
