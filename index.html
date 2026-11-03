@@ -90,17 +90,23 @@
         }
 
         async function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const content = input.value.trim();
-            if (!content) return;
-            
-            input.value = ''; 
-            await supabaseClient.from('messages').insert({
-                user_name: currentUser,
-                content: content
-            });
-            loadMessages();
-        }
+    const input = document.getElementById('msg-input');
+    const content = input.value.trim();
+    if (!content) return;
+    
+    input.value = ''; 
+    const { data, error } = await supabaseClient.from('messages').insert({
+        user_name: currentUser,
+        content: content
+    });
+
+    if (error) {
+        alert('خطا در دیتابیس: ' + error.message);
+        console.error(error);
+    } else {
+        loadMessages();
+    }
+}
 
         // اگر قبلا لاگین کرده بود
         if (currentUser) {
