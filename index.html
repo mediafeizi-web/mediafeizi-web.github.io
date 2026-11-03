@@ -3,41 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>چت پرو - دمو</title>
+    <title>چت پرو</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Vazirmatn, sans-serif; background-color: #0f172a; color: white; }
         .hidden { display: none !important; }
-        .chat-box { height: calc(100vh - 160px); overflow-y: auto; }
+        .chat-box { height: calc(100vh - 180px); overflow-y: auto; }
+        .verified-badge { color: #3b82f6; display: inline-block; width: 16px; height: 16px; margin-right: 4px; }
     </style>
 </head>
-<body class="p-4 pb-20">
+<body class="pb-20">
 
-    <!-- صفحه ورود با اسم -->
+    <!-- صفحه ورود (ثبت نام اولیه) -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center">
             <h1 class="text-3xl font-bold text-blue-500 mb-2">چت پرو 💬</h1>
-            <p class="text-gray-400 text-sm mb-6">نسخه دمو (بدون نیاز به پیامک)</p>
-            <input type="text" id="name-input" placeholder="اسمت رو بنویس..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center mb-4 text-lg outline-none focus:border-blue-500">
-            <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition-all">ورود به چت</button>
+            <p class="text-gray-400 text-sm mb-6">برای شروع یک نام کاربری بساز</p>
+            <input type="text" id="reg-name" placeholder="نام نمایشی (مثلا: علی)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center mb-3 text-lg outline-none focus:border-blue-500">
+            <input type="text" id="reg-username" placeholder="نام کاربری انگلیسی (مثلا: ali)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center mb-4 text-lg outline-none focus:border-blue-500" dir="ltr">
+            <button onclick="register()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition-all">ورود به چت</button>
         </div>
     </div>
 
-    <!-- صفحه چت -->
-    <div id="chat-screen" class="hidden max-w-lg mx-auto">
-        <header class="bg-slate-800 p-4 rounded-2xl flex justify-between items-center shadow-md mb-4">
-            <h1 class="font-bold text-lg">چت عمومی 🌍</h1>
+    <!-- برنامه اصلی -->
+    <div id="main-app" class="hidden max-w-lg mx-auto">
+        <header class="bg-slate-800 p-4 sticky top-0 z-10 flex justify-between items-center shadow-md mb-4">
+            <h1 id="header-title" class="font-bold text-lg">چت عمومی 🌍</h1>
             <button onclick="logout()" class="text-red-400 text-sm hover:text-red-300">خروج</button>
         </header>
 
-        <div id="chat-box" class="chat-box bg-slate-800/50 rounded-2xl p-4 flex flex-col gap-3 mb-4"></div>
-        
-        <div class="flex gap-2 fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-slate-800 p-2 rounded-2xl border border-slate-700">
-            <input type="text" id="msg-input" placeholder="پیام خود را بنویسید..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 text-sm" onkeypress="if(event.key === 'Enter') sendMessage()">
-            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 px-6 rounded-xl font-bold transition-all text-sm">ارسال</button>
-        </div>
+        <main class="px-4">
+            <!-- تب چت -->
+            <div id="tab-chat">
+                <div id="chat-box" class="chat-box bg-slate-800/50 rounded-2xl p-4 flex flex-col gap-3 mb-4"></div>
+                <div class="flex gap-2 fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-slate-800 p-2 rounded-2xl border border-slate-700">
+                    <input type="text" id="msg-input" placeholder="پیام خود را بنویسید..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 text-sm" onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 px-6 rounded-xl font-bold transition-all text-sm">ارسال</button>
+                </div>
+            </div>
+
+            <!-- تب پروفایل من -->
+            <div id="tab-profile" class="hidden">
+                <div class="bg-slate-800 p-6 rounded-3xl text-center border border-slate-700 shadow-lg relative mt-4">
+                    <img id="prof-avatar" src="https://ui-avatars.com/api/?name=User&background=random" class="w-24 h-24 rounded-full mx-auto border-4 border-slate-600 mb-3 object-cover">
+                    <h2 id="prof-name" class="text-xl font-bold flex justify-center items-center"></h2>
+                    <p id="prof-username" class="text-gray-400 mb-3 text-sm" dir="ltr"></p>
+                    
+                    <div class="text-right mt-4 bg-slate-900 p-4 rounded-xl">
+                        <label class="text-sm text-gray-400">لینک عکس پروفایل (آدرس عکس):</label>
+                        <input type="text" id="prof-avatar-input" class="w-full bg-transparent border-b border-slate-700 mt-2 outline-none text-sm pb-1" dir="ltr" placeholder="https://...">
+                        
+                        <label class="text-sm text-gray-400 mt-4 block">بیوگرافی:</label>
+                        <textarea id="prof-bio" class="w-full bg-transparent border-b border-slate-700 mt-2 outline-none resize-none text-sm" rows="2"></textarea>
+                    </div>
+                    <button onclick="updateProfile()" class="mt-6 w-full bg-green-600 hover:bg-green-700 p-3 rounded-xl font-bold transition-all">ذخیره تغییرات</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- منوی پایین -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-800 flex justify-around p-3 border-t border-slate-700 z-20 max-w-lg mx-auto rounded-t-2xl">
+            <button onclick="switchTab('chat')" id="nav-chat" class="text-blue-500 flex flex-col items-center w-1/2">
+                <span class="text-xl">💬</span><span class="text-xs mt-1 font-bold">چت عمومی</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="text-gray-400 hover:text-white flex flex-col items-center w-1/2">
+                <span class="text-xl">👤</span><span class="text-xs mt-1 font-bold">پروفایل من</span>
+            </button>
+        </nav>
     </div>
 
     <script>
@@ -45,42 +79,114 @@
         const SUPABASE_KEY = 'sb_publishable_Oo570G6D0UYC2Sny9xZGjA_qSEo-bhi';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = localStorage.getItem('chat_demo_name');
+        let currentUser = null;
+        let currentProfile = null;
 
-        function login() {
-            const name = document.getElementById('name-input').value.trim();
-            if(!name) return alert('اسمت رو وارد کن!');
-            localStorage.setItem('chat_demo_name', name);
-            currentUser = name;
-            showChat();
+        // بررسی وضعیت لاگین
+        async function checkUser() {
+            const savedUserId = localStorage.getItem('chat_pro_user_id');
+            if (savedUserId) {
+                const { data } = await supabaseClient.from('profiles').select('*').eq('id', savedUserId).single();
+                if (data) {
+                    currentUser = data.id;
+                    currentProfile = data;
+                    showApp();
+                }
+            }
+        }
+
+        // ثبت نام
+        async function register() {
+            const name = document.getElementById('reg-name').value.trim();
+            const username = document.getElementById('reg-username').value.trim();
+            if(!name || !username) return alert('نام و نام کاربری را وارد کنید!');
+
+            const { data, error } = await supabaseClient.from('profiles').insert({
+                display_name: name,
+                username: username,
+                avatar_url: `https://ui-avatars.com/api/?name=${name}&background=random`
+            }).select().single();
+
+            if (error) {
+                alert('خطا: این نام کاربری قبلا گرفته شده یا مشکل دیگری وجود دارد.');
+            } else {
+                localStorage.setItem('chat_pro_user_id', data.id);
+                currentUser = data.id;
+                currentProfile = data;
+                showApp();
+            }
         }
 
         function logout() {
-            localStorage.removeItem('chat_demo_name');
+            localStorage.removeItem('chat_pro_user_id');
             location.reload();
         }
 
-        function showChat() {
+        function showApp() {
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('chat-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            // تنظیم تب پروفایل
+            document.getElementById('prof-avatar').src = currentProfile.avatar_url;
+            let nameHTML = currentProfile.display_name;
+            if (currentProfile.is_verified) {
+                nameHTML += ' <svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+            }
+            document.getElementById('prof-name').innerHTML = nameHTML;
+            document.getElementById('prof-username').innerText = '@' + currentProfile.username;
+            document.getElementById('prof-bio').value = currentProfile.bio || '';
+            document.getElementById('prof-avatar-input').value = currentProfile.avatar_url || '';
+
             loadMessages();
-            // هر 3 ثانیه پیام‌های جدید رو چک کن
-            setInterval(loadMessages, 3000);
+            setInterval(loadMessages, 3000); // آپدیت خودکار چت
         }
 
+        // مدیریت تب‌ها
+        function switchTab(tab) {
+            document.getElementById('tab-chat').classList.add('hidden');
+            document.getElementById('tab-profile').classList.add('hidden');
+            
+            document.getElementById('nav-chat').className = 'text-gray-400 flex flex-col items-center w-1/2';
+            document.getElementById('nav-profile').className = 'text-gray-400 flex flex-col items-center w-1/2';
+            document.getElementById(`nav-${tab}`).className = 'text-blue-500 flex flex-col items-center w-1/2';
+
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        }
+
+        // آپدیت پروفایل
+        async function updateProfile() {
+            const bio = document.getElementById('prof-bio').value;
+            const avatar = document.getElementById('prof-avatar-input').value;
+            
+            await supabaseClient.from('profiles').update({ 
+                bio: bio,
+                avatar_url: avatar
+            }).eq('id', currentUser);
+            
+            currentProfile.bio = bio;
+            currentProfile.avatar_url = avatar;
+            document.getElementById('prof-avatar').src = avatar;
+            alert('پروفایل با موفقیت بروزرسانی شد!');
+        }
+
+        // چت
         async function loadMessages() {
             const box = document.getElementById('chat-box');
-            const { data: messages } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
+            // اینجا از profiles برای گرفتن اسم و عکس فرستنده استفاده می‌کنیم
+            const { data: messages } = await supabaseClient.from('messages').select('*, profiles(display_name, avatar_url, is_verified)').order('created_at', { ascending: true });
             
             if(!messages) return;
             
             box.innerHTML = '';
             messages.forEach(msg => {
-                const isMe = msg.user_name === currentUser;
+                const isMe = msg.sender_id === currentUser;
+                const senderName = msg.profiles ? msg.profiles.display_name : 'کاربر';
+                const verified = (msg.profiles && msg.profiles.is_verified) ? '<svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' : '';
+                
                 box.innerHTML += `
                     <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                         <div class="max-w-[80%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 rounded-br-none' : 'bg-slate-700 rounded-bl-none'}">
-                            ${!isMe ? `<div class="text-xs text-blue-300 mb-1">${msg.user_name}</div>` : ''}
+                            ${!isMe ? `<div class="text-xs text-blue-300 mb-1 flex items-center">${senderName} ${verified}</div>` : ''}
                             <div class="text-sm whitespace-pre-wrap">${msg.content}</div>
                         </div>
                     </div>
@@ -90,28 +196,21 @@
         }
 
         async function sendMessage() {
-    const input = document.getElementById('msg-input');
-    const content = input.value.trim();
-    if (!content) return;
-    
-    input.value = ''; 
-    const { data, error } = await supabaseClient.from('messages').insert({
-        user_name: currentUser,
-        content: content
-    });
-
-    if (error) {
-        alert('خطا در دیتابیس: ' + error.message);
-        console.error(error);
-    } else {
-        loadMessages();
-    }
-}
-
-        // اگر قبلا لاگین کرده بود
-        if (currentUser) {
-            showChat();
+            const input = document.getElementById('msg-input');
+            const content = input.value.trim();
+            if (!content) return;
+            
+            input.value = ''; 
+            await supabaseClient.from('messages').insert({
+                user_name: currentProfile.display_name,
+                sender_id: currentUser,
+                content: content
+            });
+            loadMessages();
         }
+
+        // شروع
+        checkUser();
     </script>
 </body>
 </html>
