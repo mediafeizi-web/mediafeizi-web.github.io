@@ -8,171 +8,242 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Vazirmatn, sans-serif; background-color: #0f172a; color: white; }
+        body { font-family: Vazirmatn, sans-serif; background-color: #09090b; color: white; margin: 0; padding: 0; overflow: hidden; }
         .hidden { display: none !important; }
-        .chat-box { height: calc(100vh - 180px); overflow-y: auto; }
+        
+        /* اسکرول بار */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        
+        /* چت */
+        .chat-container { height: calc(100vh - 140px); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .msg-bubble { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 14px; line-height: 1.5; }
+        .msg-mine { background: white; color: black; border-bottom-left-radius: 4px; align-self: flex-end; }
+        .msg-other { background: #27272a; color: white; border-bottom-right-radius: 4px; align-self: flex-start; }
+        
         .verified-badge { color: #3b82f6; display: inline-block; width: 16px; height: 16px; margin-right: 4px; }
     </style>
 </head>
-<body class="pb-20">
+<body>
 
-    <!-- صفحه ورود (ثبت نام اولیه) -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center">
-            <h1 class="text-3xl font-bold text-blue-500 mb-2">چت پرو 💬</h1>
-            <p class="text-gray-400 text-sm mb-6">برای شروع یک نام کاربری بساز</p>
-            <input type="text" id="reg-name" placeholder="نام نمایشی (مثلا: علی)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center mb-3 text-lg outline-none focus:border-blue-500">
-            <input type="text" id="reg-username" placeholder="نام کاربری انگلیسی (مثلا: ali)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center mb-4 text-lg outline-none focus:border-blue-500" dir="ltr">
-            <button onclick="register()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition-all">ورود به چت</button>
+    <!-- صفحه ثبت‌نام -->
+    <div id="login-screen" class="fixed inset-0 bg-[#09090b] flex items-center justify-center p-4 z-50">
+        <div class="bg-[#18181b] p-8 rounded-3xl w-full max-w-sm shadow-2xl text-center border border-[#27272a]">
+            <div class="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                <span class="text-4xl text-black">💬</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-6">ورود به چت پرو</h1>
+            
+            <input type="text" id="reg-name" placeholder="نام نمایشی (مثلا: علی)" class="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl p-3 text-center mb-3 text-white outline-none focus:border-white transition-colors">
+            <input type="text" id="reg-username" placeholder="نام کاربری (انگلیسی)" class="w-full bg-[#09090b] border border-[#3f3f46] rounded-xl p-3 text-center mb-6 text-white outline-none focus:border-white transition-colors" dir="ltr">
+            
+            <button onclick="register()" class="w-full bg-white text-black hover:bg-gray-200 p-3 rounded-xl font-bold transition-all">ورود</button>
         </div>
     </div>
 
     <!-- برنامه اصلی -->
-    <div id="main-app" class="hidden max-w-lg mx-auto">
-        <header class="bg-slate-800 p-4 sticky top-0 z-10 flex justify-between items-center shadow-md mb-4">
-            <h1 id="header-title" class="font-bold text-lg">چت عمومی 🌍</h1>
-            <button onclick="logout()" class="text-red-400 text-sm hover:text-red-300">خروج</button>
-        </header>
-
-        <main class="px-4">
-            <!-- تب چت -->
-            <div id="tab-chat">
-                <div id="chat-box" class="chat-box bg-slate-800/50 rounded-2xl p-4 flex flex-col gap-3 mb-4"></div>
-                <div class="flex gap-2 fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-slate-800 p-2 rounded-2xl border border-slate-700">
-                    <input type="text" id="msg-input" placeholder="پیام خود را بنویسید..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 text-sm" onkeypress="if(event.key === 'Enter') sendMessage()">
-                    <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 px-6 rounded-xl font-bold transition-all text-sm">ارسال</button>
+    <div id="main-app" class="hidden h-screen flex flex-col">
+        
+        <!-- هدر -->
+        <header class="flex justify-between items-center p-4 bg-[#09090b] border-b border-[#27272a]">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <span class="text-black text-sm">💬</span>
+                </div>
+                <h1 class="font-bold text-lg text-white">چت پرو</h1>
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-white text-sm">خروج</button>
+        </header>    <main class="flex-1 overflow-hidden relative">
+        
+        <!-- تب چت عمومی -->
+        <div id="tab-chat" class="h-full flex flex-col">
+            <div id="chat-box" class="chat-container"></div>
+            <div class="p-4 bg-[#09090b] border-t border-[#27272a]">
+                <div class="flex gap-2 items-center bg-[#18181b] border border-[#3f3f46] rounded-full p-1 pl-4">
+                    <input type="text" id="msg-input" placeholder="پیام خود را بنویسید..." class="flex-1 bg-transparent text-white outline-none text-sm placeholder-gray-500" onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button class="text-gray-400 hover:text-white p-2">😊</button>
+                    <button class="text-gray-400 hover:text-white p-2">📎</button>
+                    <button onclick="sendMessage()" class="bg-white text-black p-2 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- تب پروفایل من -->
-            <div id="tab-profile" class="hidden">
-                <div class="bg-slate-800 p-6 rounded-3xl text-center border border-slate-700 shadow-lg relative mt-4">
-                    <img id="prof-avatar" src="https://ui-avatars.com/api/?name=User&background=random" class="w-24 h-24 rounded-full mx-auto border-4 border-slate-600 mb-3 object-cover">
-                    <h2 id="prof-name" class="text-xl font-bold flex justify-center items-center"></h2>
-                    <p id="prof-username" class="text-gray-400 mb-3 text-sm" dir="ltr"></p>
-                    
-                    <div class="text-right mt-4 bg-slate-900 p-4 rounded-xl">
-                        <label class="text-sm text-gray-400">لینک عکس پروفایل (آدرس عکس):</label>
-                        <input type="text" id="prof-avatar-input" class="w-full bg-transparent border-b border-slate-700 mt-2 outline-none text-sm pb-1" dir="ltr" placeholder="https://...">
-                        
-                        <label class="text-sm text-gray-400 mt-4 block">بیوگرافی:</label>
-                        <textarea id="prof-bio" class="w-full bg-transparent border-b border-slate-700 mt-2 outline-none resize-none text-sm" rows="2"></textarea>
-                    </div>
-                    <button onclick="updateProfile()" class="mt-6 w-full bg-green-600 hover:bg-green-700 p-3 rounded-xl font-bold transition-all">ذخیره تغییرات</button>
+        <!-- تب کاربران -->
+        <div id="tab-users" class="hidden h-full overflow-y-auto p-4">
+            <input type="text" id="search-user" placeholder="جستجوی کاربر..." class="w-full bg-[#18181b] border border-[#3f3f46] rounded-xl p-3 text-white outline-none mb-4">
+            <div id="users-list" class="flex flex-col gap-2"></div>
+        </div>
+
+        <!-- تب پروفایل -->
+        <div id="tab-profile" class="hidden h-full overflow-y-auto p-4">
+            <div class="bg-[#18181b] rounded-3xl p-6 border border-[#27272a] text-center shadow-lg relative">
+                <button class="absolute top-4 right-4 text-gray-400 hover:text-white">⚙️</button>
+
+                <img id="prof-avatar" src="https://ui-avatars.com/api/?name=User&background=random" class="w-28 h-28 rounded-full mx-auto border-4 border-[#09090b] shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-4 object-cover">
+                
+                <h2 id="prof-name" class="text-xl font-bold text-white flex justify-center items-center gap-1"></h2>
+                <p id="prof-username" class="text-gray-500 text-sm mt-1 mb-2" dir="ltr"></p>
+                <p id="prof-bio" class="text-gray-400 text-sm bg-[#09090b] p-3 rounded-xl mt-4"></p>
+
+                <div class="flex flex-col gap-2 mt-6">
+                    <button onclick="openEditProfile()" class="w-full bg-[#27272a] text-white p-3 rounded-xl font-bold text-sm flex items-center justify-between hover:bg-[#3f3f46] transition-all">
+                        <span>ویرایش پروفایل</span>
+                        <span>✏️</span>
+                    </button>
+                    <button class="w-full bg-[#27272a] text-white p-3 rounded-xl font-bold text-sm flex items-center justify-between hover:bg-[#3f3f46] transition-all">
+                        <span>ارسال گزارش</span>
+                        <span>📢</span>
+                    </button>
                 </div>
             </div>
-        </main>
+        </div>
 
-        <!-- منوی پایین -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-slate-800 flex justify-around p-3 border-t border-slate-700 z-20 max-w-lg mx-auto rounded-t-2xl">
-            <button onclick="switchTab('chat')" id="nav-chat" class="text-blue-500 flex flex-col items-center w-1/2">
-                <span class="text-xl">💬</span><span class="text-xs mt-1 font-bold">چت عمومی</span>
-            </button>
-            <button onclick="switchTab('profile')" id="nav-profile" class="text-gray-400 hover:text-white flex flex-col items-center w-1/2">
-                <span class="text-xl">👤</span><span class="text-xs mt-1 font-bold">پروفایل من</span>
-            </button>
-        </nav>
-    </div>
+        <!-- فرم ویرایش پروفایل -->
+        <div id="edit-profile-form" class="hidden absolute inset-0 bg-[#09090b] z-40 p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold">ویرایش پروفایل</h2>
+                <button onclick="closeEditProfile()" class="text-gray-400">✖</button>
+            </div>
+            <label class="text-sm text-gray-400 mb-2">لینک عکس پروفایل:</label>
+            <input type="text" id="edit-avatar" class="w-full bg-[#18181b] border border-[#3f3f46] rounded-xl p-3 text-white outline-none mb-4 text-sm" dir="ltr">
+            
+            <label class="text-sm text-gray-400 mb-2">بیوگرافی:</label>
+            <textarea id="edit-bio" class="w-full bg-[#18181b] border border-[#3f3f46] rounded-xl p-3 text-white outline-none mb-6 text-sm h-24 resize-none"></textarea>
+            
+            <button onclick="updateProfile()" class="w-full bg-white text-black p-3 rounded-xl font-bold">ذخیره تغییرات</button>
+        </div>
+    </main>
 
-    <script>
-        const SUPABASE_URL = 'https://tdmhcqiwwzkzgdzvikiu.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_Oo570G6D0UYC2Sny9xZGjA_qSEo-bhi';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- منوی پایین -->
+    <nav class="bg-[#09090b] border-t border-[#27272a] flex justify-around p-3 pb-6 z-20">
+        <button onclick="switchTab('profile')" id="nav-profile" class="text-gray-500 flex flex-col items-center gap-1 w-1/3">
+            <span class="text-xl">👤</span><span class="text-xs font-bold">پروفایل</span>
+        </button>
+        <button onclick="switchTab('users')" id="nav-users" class="text-gray-500 flex flex-col items-center gap-1 w-1/3">
+            <span class="text-xl">👥</span><span class="text-xs font-bold">کاربران</span>
+        </button>
+        <button onclick="switchTab('chat')" id="nav-chat" class="text-gray-500 flex flex-col items-center gap-1 w-1/3">
+            <span class="text-xl">💬</span><span class="text-xs font-bold">چت عمومی</span>
+        </button>
+    </nav>
+</div><script>
+    const SUPABASE_URL = 'https://tdmhcqiwwzkzgdzvikiu.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Oo570G6D0UYC2Sny9xZGjA_qSEo-bhi';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null;
-        let currentProfile = null;
+    let currentUser = null;
+    let currentProfile = null;
+    let currentTab = 'chat';
 
-        // بررسی وضعیت لاگین
-        async function checkUser() {
-            const savedUserId = localStorage.getItem('chat_pro_user_id');
-            if (savedUserId) {
-                const { data } = await supabaseClient.from('profiles').select('*').eq('id', savedUserId).single();
-                if (data) {
-                    currentUser = data.id;
-                    currentProfile = data;
-                    showApp();
-                }
-            }
-        }
-
-        // ثبت نام
-        async function register() {
-            const name = document.getElementById('reg-name').value.trim();
-            const username = document.getElementById('reg-username').value.trim();
-            if(!name || !username) return alert('نام و نام کاربری را وارد کنید!');
-
-            const { data, error } = await supabaseClient.from('profiles').insert({
-                display_name: name,
-                username: username,
-                avatar_url: `https://ui-avatars.com/api/?name=${name}&background=random`
-            }).select().single();
-
-            if (error) {
-                alert('خطا: این نام کاربری قبلا گرفته شده یا مشکل دیگری وجود دارد.');
-            } else {
-                localStorage.setItem('chat_pro_user_id', data.id);
+    async function checkUser() {
+        const savedUserId = localStorage.getItem('chat_pro_user_id');
+        if (savedUserId) {
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', savedUserId).single();
+            if (data) {
                 currentUser = data.id;
                 currentProfile = data;
                 showApp();
             }
         }
+    }
 
-        function logout() {
-            localStorage.removeItem('chat_pro_user_id');
-            location.reload();
+    async function register() {
+        const name = document.getElementById('reg-name').value.trim();
+        const username = document.getElementById('reg-username').value.trim();
+        if(!name || !username) return alert('نام و نام کاربری را وارد کنید!');
+
+        const { data: existing } = await supabaseClient.from('profiles').select('id').eq('username', username).maybeSingle();
+        if (existing) return alert('این نام کاربری قبلا گرفته شده. یه اسم دیگه بزن.');
+
+        const { data, error } = await supabaseClient.from('profiles').insert({
+            display_name: name,
+            username: username,
+            avatar_url: `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`
+        }).select().single();
+
+        if (error) {
+            alert('خطا: ' + error.message);
+        } else {
+            localStorage.setItem('chat_pro_user_id', data.id);
+            currentUser = data.id;
+            currentProfile = data;
+            showApp();
         }
+    }
 
-        function showApp() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
+    function logout() {
+        localStorage.removeItem('chat_pro_user_id');
+        location.reload();
+    }
+
+    function showApp() {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        
+        updateProfileUI();
+        switchTab('chat');
+        loadUsers();
+        
+        setInterval(() => {
+            if(currentTab === 'chat') loadMessages();
+        }, 3000);
+    }
+
+    function updateProfileUI() {
+        document.getElementById('prof-avatar').src = currentProfile.avatar_url;
+        let nameHTML = currentProfile.display_name;
+        if (currentProfile.is_verified) {
+            nameHTML += ' <svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+        }
+        document.getElementById('prof-name').innerHTML = nameHTML;
+        document.getElementById('prof-username').innerText = '@' + currentProfile.username;
+        document.getElementById('prof-bio').innerText = currentProfile.bio || 'بیوگرافی ندارد.';
+    }
+
+    function openEditProfile() {
+        document.getElementById('edit-avatar').value = currentProfile.avatar_url || '';
+        document.getElementById('edit-bio').value = currentProfile.bio || '';
+        document.getElementById('edit-profile-form').classList.remove('hidden');
+    }
+
+    function closeEditProfile() {
+        document.getElementById('edit-profile-form').classList.add('hidden');
+    }
+
+    async function updateProfile() {
+        const bio = document.getElementById('edit-bio').value;
+        const avatar = document.getElementById('edit-avatar').value;
+        
+        await supabaseClient.from('profiles').update({ bio: bio, avatar_url: avatar }).eq('id', currentUser);
+        
+        currentProfile.bio = bio;
+        currentProfile.avatar_url = avatar;
+        updateProfileUI();
+        closeEditProfile();
+        alert('پروفایل بروزرسانی شد!');
+    }        function switchTab(tab) {
+            currentTab = tab;
             
-            // تنظیم تب پروفایل
-            document.getElementById('prof-avatar').src = currentProfile.avatar_url;
-            let nameHTML = currentProfile.display_name;
-            if (currentProfile.is_verified) {
-                nameHTML += ' <svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
-            }
-            document.getElementById('prof-name').innerHTML = nameHTML;
-            document.getElementById('prof-username').innerText = '@' + currentProfile.username;
-            document.getElementById('prof-bio').value = currentProfile.bio || '';
-            document.getElementById('prof-avatar-input').value = currentProfile.avatar_url || '';
-
-            loadMessages();
-            setInterval(loadMessages, 3000); // آپدیت خودکار چت
-        }
-
-        // مدیریت تب‌ها
-        function switchTab(tab) {
             document.getElementById('tab-chat').classList.add('hidden');
+            document.getElementById('tab-users').classList.add('hidden');
             document.getElementById('tab-profile').classList.add('hidden');
+            document.getElementById('edit-profile-form').classList.add('hidden');
             
-            document.getElementById('nav-chat').className = 'text-gray-400 flex flex-col items-center w-1/2';
-            document.getElementById('nav-profile').className = 'text-gray-400 flex flex-col items-center w-1/2';
-            document.getElementById(`nav-${tab}`).className = 'text-blue-500 flex flex-col items-center w-1/2';
+            document.getElementById('nav-chat').className = 'text-gray-500 flex flex-col items-center gap-1 w-1/3';
+            document.getElementById('nav-users').className = 'text-gray-500 flex flex-col items-center gap-1 w-1/3';
+            document.getElementById('nav-profile').className = 'text-gray-500 flex flex-col items-center gap-1 w-1/3';
+            document.getElementById(`nav-${tab}`).className = 'text-white flex flex-col items-center gap-1 w-1/3';
 
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
+
+            if(tab === 'chat') loadMessages();
         }
 
-        // آپدیت پروفایل
-        async function updateProfile() {
-            const bio = document.getElementById('prof-bio').value;
-            const avatar = document.getElementById('prof-avatar-input').value;
-            
-            await supabaseClient.from('profiles').update({ 
-                bio: bio,
-                avatar_url: avatar
-            }).eq('id', currentUser);
-            
-            currentProfile.bio = bio;
-            currentProfile.avatar_url = avatar;
-            document.getElementById('prof-avatar').src = avatar;
-            alert('پروفایل با موفقیت بروزرسانی شد!');
-        }
-
-        // چت
         async function loadMessages() {
             const box = document.getElementById('chat-box');
-            // اینجا از profiles برای گرفتن اسم و عکس فرستنده استفاده می‌کنیم
             const { data: messages } = await supabaseClient.from('messages').select('*, profiles(display_name, avatar_url, is_verified)').order('created_at', { ascending: true });
             
             if(!messages) return;
@@ -180,14 +251,13 @@
             box.innerHTML = '';
             messages.forEach(msg => {
                 const isMe = msg.sender_id === currentUser;
-                const senderName = msg.profiles ? msg.profiles.display_name : 'کاربر';
-                const verified = (msg.profiles && msg.profiles.is_verified) ? '<svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' : '';
+                const verified = (msg.profiles && msg.profiles.is_verified) ? '<svg class="verified-badge inline-block mb-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' : '';
                 
                 box.innerHTML += `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                        <div class="max-w-[80%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 rounded-br-none' : 'bg-slate-700 rounded-bl-none'}">
-                            ${!isMe ? `<div class="text-xs text-blue-300 mb-1 flex items-center">${senderName} ${verified}</div>` : ''}
-                            <div class="text-sm whitespace-pre-wrap">${msg.content}</div>
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        ${!isMe ? `<div class="text-xs text-gray-400 mb-1 ml-1 flex items-center">${msg.profiles?.display_name || 'کاربر'} ${verified}</div>` : ''}
+                        <div class="msg-bubble ${isMe ? 'msg-mine' : 'msg-other'}">
+                            ${msg.content}
                         </div>
                     </div>
                 `;
@@ -202,14 +272,37 @@
             
             input.value = ''; 
             await supabaseClient.from('messages').insert({
-                user_name: currentProfile.display_name,
                 sender_id: currentUser,
+                user_name: currentProfile.display_name,
                 content: content
             });
             loadMessages();
         }
 
-        // شروع
+        async function loadUsers() {
+            const { data: users } = await supabaseClient.from('profiles').select('*').neq('id', currentUser).eq('is_blocked', false);
+            const list = document.getElementById('users-list');
+            list.innerHTML = '';
+            
+            if(users && users.length > 0) {
+                users.forEach(u => {
+                    const verified = u.is_verified ? '<svg class="verified-badge" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' : '';
+                    
+                    list.innerHTML += `
+                        <div class="bg-[#18181b] p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-[#27272a] border border-[#27272a] transition-all">
+                            <img src="${u.avatar_url}" class="w-12 h-12 rounded-full object-cover">
+                            <div class="flex-1">
+                                <div class="font-bold text-white flex items-center gap-1">${u.display_name} ${verified}</div>
+                                <div class="text-xs text-gray-500" dir="ltr">@${u.username}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                list.innerHTML = '<p class="text-center text-gray-500 mt-4">کاربر دیگری یافت نشد.</p>';
+            }
+        }
+
         checkUser();
     </script>
 </body>
